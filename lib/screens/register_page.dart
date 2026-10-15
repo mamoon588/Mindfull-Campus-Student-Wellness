@@ -166,7 +166,8 @@ class _RegisterPageState extends State<RegisterPage> {
   _Country _country = _countries.first; // Pakistan by default
   String? _gender;
   bool _agreed = false;
-  bool _showPass = false;
+  bool _showPass = false; // eye on the Password field
+  bool _showConfirm = false; // separate eye on the Confirm field
   bool _busy = false;
   bool _tried = false; // true after the first press of "Create Account"
   String? _error; // ONE message line, so the page never grows taller
@@ -606,12 +607,29 @@ class _RegisterPageState extends State<RegisterPage> {
                               Expanded(
                                 child: TextFormField(
                                   controller: _confirm,
-                                  obscureText: !_showPass,
+                                  obscureText: !_showConfirm,
                                   textInputAction: TextInputAction.done,
                                   onFieldSubmitted: (_) => _submit(),
                                   autofillHints: const [AutofillHints.newPassword],
                                   cursorColor: _teal,
-                                  decoration: _dec(hintWidget: _req('Confirm')),
+                                  decoration: _dec(
+                                    hintWidget: _req('Confirm'),
+                                    suffix: IconButton(
+                                      tooltip: _showConfirm ? 'Hide password' : 'Show password',
+                                      padding: EdgeInsets.zero,
+                                      visualDensity: VisualDensity.compact,
+                                      constraints: const BoxConstraints(
+                                          minWidth: 36, minHeight: 36),
+                                      icon: Icon(
+                                          _showConfirm
+                                              ? Icons.visibility_rounded
+                                              : Icons.visibility_off_rounded,
+                                          size: 20,
+                                          color: _teal),
+                                      onPressed: () =>
+                                          setState(() => _showConfirm = !_showConfirm),
+                                    ),
+                                  ),
                                   validator: (v) => v == _pass.text ? null : 'x',
                                 ),
                               ),
