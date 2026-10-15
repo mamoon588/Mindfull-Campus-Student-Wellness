@@ -26,6 +26,7 @@ class _LoginPageState extends State<LoginPage> with SingleTickerProviderStateMix
   bool _showPass = false;
   bool _remember = false;
   bool _busy = false;
+  bool _tried = false; // show red errors only after the first Log In press
 
   @override
   void initState() {
@@ -56,6 +57,7 @@ class _LoginPageState extends State<LoginPage> with SingleTickerProviderStateMix
 
   Future<void> _submit() async {
     if (_busy) return;
+    setState(() => _tried = true);
     if (!_form.currentState!.validate()) {
       showToast(context, 'Please fix the highlighted fields.', kind: ToastKind.error);
       return;
@@ -96,7 +98,8 @@ class _LoginPageState extends State<LoginPage> with SingleTickerProviderStateMix
     return AutofillGroup(
       child: Form(
         key: _form,
-        autovalidateMode: AutovalidateMode.onUserInteraction,
+        autovalidateMode:
+        _tried ? AutovalidateMode.onUserInteraction : AutovalidateMode.disabled,
         child: Column(
           mainAxisSize: fill ? MainAxisSize.max : MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -195,7 +198,13 @@ class _LoginPageState extends State<LoginPage> with SingleTickerProviderStateMix
                   onPressed: () => setState(() => _showPass = !_showPass),
                 ),
               ),
-              validator: (v) => (v == null || v.isEmpty) ? 'Enter your password' : null,
+              validator: (v) {
+                if (v == null || v.isEmpty) return 'Enter your password';
+                if (!PasswordRules.ok(v)) {
+                  return '8+ chars with upper, lower, digit & symbol';
+                }
+                return null;
+              },
             ),
             const SizedBox(height: 4),
 

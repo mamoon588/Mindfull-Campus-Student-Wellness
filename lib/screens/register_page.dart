@@ -1,5 +1,6 @@
 import 'dart:math' as math;
 
+import 'package:country_flags/country_flags.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
@@ -24,42 +25,126 @@ const _danger = Color(0xFFDC2626);
 // without a leading 0 (approximate rules, adjust if you need stricter ones).
 // =====================================================================
 class _Country {
-  const _Country(this.flag, this.name, this.dial, this.minLen, this.maxLen);
-  final String flag;
+  const _Country(this.iso, this.name, this.dial, this.minLen, this.maxLen);
+  final String iso; // ISO 2-letter code, used to draw the flag image
   final String name;
   final String dial;
   final int minLen;
   final int maxLen;
 }
 
-const _countries = [
-  _Country('🇵🇰', 'Pakistan', '+92', 10, 10),
-  _Country('🇮🇳', 'India', '+91', 10, 10),
-  _Country('🇧🇩', 'Bangladesh', '+880', 10, 10),
-  _Country('🇦🇫', 'Afghanistan', '+93', 9, 9),
-  _Country('🇦🇪', 'United Arab Emirates', '+971', 9, 9),
-  _Country('🇸🇦', 'Saudi Arabia', '+966', 9, 9),
-  _Country('🇬🇧', 'United Kingdom', '+44', 10, 10),
-  _Country('🇺🇸', 'United States', '+1', 10, 10),
-  _Country('🇨🇦', 'Canada', '+1', 10, 10),
-  _Country('🇹🇷', 'Turkey', '+90', 10, 10),
-  _Country('🇶🇦', 'Qatar', '+974', 8, 8),
-  _Country('🇰🇼', 'Kuwait', '+965', 8, 8),
-  _Country('🇴🇲', 'Oman', '+968', 8, 8),
-  _Country('🇧🇭', 'Bahrain', '+973', 8, 8),
-  _Country('🇲🇾', 'Malaysia', '+60', 9, 10),
-  _Country('🇦🇺', 'Australia', '+61', 9, 9),
-  _Country('🇩🇪', 'Germany', '+49', 10, 11),
-  _Country('🇫🇷', 'France', '+33', 9, 9),
-  _Country('🇨🇳', 'China', '+86', 11, 11),
-  _Country('🇮🇷', 'Iran', '+98', 10, 10),
-  _Country('🇱🇰', 'Sri Lanka', '+94', 9, 9),
-  _Country('🇳🇵', 'Nepal', '+977', 10, 10),
-  _Country('🇪🇬', 'Egypt', '+20', 10, 10),
-  _Country('🇳🇬', 'Nigeria', '+234', 10, 10),
-  _Country('🇿🇦', 'South Africa', '+27', 9, 9),
-  _Country('🇮🇩', 'Indonesia', '+62', 9, 12),
+// Pakistan stays first (default); the rest are sorted A-Z in _countries below.
+const _rawCountries = [
+  _Country('PK', 'Pakistan', '+92', 10, 10),
+  _Country('IN', 'India', '+91', 10, 10),
+  _Country('BD', 'Bangladesh', '+880', 10, 10),
+  _Country('AF', 'Afghanistan', '+93', 9, 9),
+  _Country('AE', 'United Arab Emirates', '+971', 9, 9),
+  _Country('SA', 'Saudi Arabia', '+966', 9, 9),
+  _Country('GB', 'United Kingdom', '+44', 10, 10),
+  _Country('US', 'United States', '+1', 10, 10),
+  _Country('CA', 'Canada', '+1', 10, 10),
+  _Country('TR', 'Turkey', '+90', 10, 10),
+  _Country('QA', 'Qatar', '+974', 8, 8),
+  _Country('KW', 'Kuwait', '+965', 8, 8),
+  _Country('OM', 'Oman', '+968', 8, 8),
+  _Country('BH', 'Bahrain', '+973', 8, 8),
+  _Country('MY', 'Malaysia', '+60', 9, 10),
+  _Country('AU', 'Australia', '+61', 9, 9),
+  _Country('DE', 'Germany', '+49', 10, 11),
+  _Country('FR', 'France', '+33', 9, 9),
+  _Country('CN', 'China', '+86', 11, 11),
+  _Country('IR', 'Iran', '+98', 10, 10),
+  _Country('LK', 'Sri Lanka', '+94', 9, 9),
+  _Country('NP', 'Nepal', '+977', 10, 10),
+  _Country('EG', 'Egypt', '+20', 10, 10),
+  _Country('NG', 'Nigeria', '+234', 10, 10),
+  _Country('ZA', 'South Africa', '+27', 9, 9),
+  _Country('ID', 'Indonesia', '+62', 9, 12),
+  _Country('RU', 'Russia', '+7', 10, 10),
+  _Country('KZ', 'Kazakhstan', '+7', 10, 10),
+  _Country('JP', 'Japan', '+81', 9, 10),
+  _Country('KR', 'South Korea', '+82', 9, 10),
+  _Country('SG', 'Singapore', '+65', 8, 8),
+  _Country('HK', 'Hong Kong', '+852', 8, 8),
+  _Country('TH', 'Thailand', '+66', 9, 9),
+  _Country('VN', 'Vietnam', '+84', 9, 10),
+  _Country('PH', 'Philippines', '+63', 10, 10),
+  _Country('IT', 'Italy', '+39', 9, 10),
+  _Country('ES', 'Spain', '+34', 9, 9),
+  _Country('PT', 'Portugal', '+351', 9, 9),
+  _Country('NL', 'Netherlands', '+31', 9, 9),
+  _Country('BE', 'Belgium', '+32', 8, 9),
+  _Country('CH', 'Switzerland', '+41', 9, 9),
+  _Country('SE', 'Sweden', '+46', 7, 10),
+  _Country('NO', 'Norway', '+47', 8, 8),
+  _Country('DK', 'Denmark', '+45', 8, 8),
+  _Country('FI', 'Finland', '+358', 9, 10),
+  _Country('IE', 'Ireland', '+353', 9, 9),
+  _Country('AT', 'Austria', '+43', 10, 12),
+  _Country('PL', 'Poland', '+48', 9, 9),
+  _Country('GR', 'Greece', '+30', 10, 10),
+  _Country('UA', 'Ukraine', '+380', 9, 9),
+  _Country('CZ', 'Czechia', '+420', 9, 9),
+  _Country('RO', 'Romania', '+40', 9, 9),
+  _Country('HU', 'Hungary', '+36', 9, 9),
+  _Country('BR', 'Brazil', '+55', 10, 11),
+  _Country('MX', 'Mexico', '+52', 10, 10),
+  _Country('AR', 'Argentina', '+54', 10, 11),
+  _Country('CO', 'Colombia', '+57', 10, 10),
+  _Country('CL', 'Chile', '+56', 9, 9),
+  _Country('PE', 'Peru', '+51', 9, 9),
+  _Country('KE', 'Kenya', '+254', 9, 9),
+  _Country('GH', 'Ghana', '+233', 9, 9),
+  _Country('ET', 'Ethiopia', '+251', 9, 9),
+  _Country('TZ', 'Tanzania', '+255', 9, 9),
+  _Country('UG', 'Uganda', '+256', 9, 9),
+  _Country('ZW', 'Zimbabwe', '+263', 9, 9),
+  _Country('MU', 'Mauritius', '+230', 8, 8),
+  _Country('MA', 'Morocco', '+212', 9, 9),
+  _Country('DZ', 'Algeria', '+213', 9, 9),
+  _Country('TN', 'Tunisia', '+216', 8, 8),
+  _Country('JO', 'Jordan', '+962', 9, 9),
+  _Country('LB', 'Lebanon', '+961', 7, 8),
+  _Country('IQ', 'Iraq', '+964', 10, 10),
+  _Country('YE', 'Yemen', '+967', 9, 9),
+  _Country('IL', 'Israel', '+972', 9, 9),
+  _Country('UZ', 'Uzbekistan', '+998', 9, 9),
+  _Country('BT', 'Bhutan', '+975', 8, 8),
+  _Country('MV', 'Maldives', '+960', 7, 7),
+  _Country('MM', 'Myanmar', '+95', 8, 10),
+  _Country('KH', 'Cambodia', '+855', 8, 9),
+  _Country('NZ', 'New Zealand', '+64', 8, 10),
 ];
+
+final List<_Country> _countries = [
+  _rawCountries.first,
+  ...(_rawCountries.skip(1).toList()..sort((a, b) => a.name.compareTo(b.name))),
+];
+
+// Flag drawn as an image (emoji flags do not render on Windows / Chrome)
+Widget _flag(String iso, {double width = 26, double height = 18}) => CountryFlag.fromCountryCode(
+  iso,
+  theme: ImageTheme(width: width, height: height, shape: const RoundedRectangle(3)),
+);
+
+// Digits only, and never longer than the selected country allows
+// (+1 only when the user types a leading 0, e.g. 03001234567).
+class _PhoneFormatter extends TextInputFormatter {
+  const _PhoneFormatter(this.maxLen);
+  final int maxLen;
+
+  @override
+  TextEditingValue formatEditUpdate(TextEditingValue oldValue, TextEditingValue newValue) {
+    final digits = newValue.text.replaceAll(RegExp(r'\D'), '');
+    final limit = digits.startsWith('0') ? maxLen + 1 : maxLen;
+    final cut = digits.length > limit ? digits.substring(0, limit) : digits;
+    return TextEditingValue(
+      text: cut,
+      selection: TextSelection.collapsed(offset: cut.length),
+    );
+  }
+}
 
 class RegisterPage extends StatefulWidget {
   const RegisterPage({super.key});
@@ -107,7 +192,10 @@ class _RegisterPageState extends State<RegisterPage> {
 
   bool get _phoneOk {
     final n = _phoneDigits.length;
-    return n >= _country.minLen && n <= _country.maxLen;
+    if (n < _country.minLen || n > _country.maxLen) return false;
+    // Pakistani mobile numbers are 03XX XXXXXXX
+    if (_country.dial == '+92' && !_phoneDigits.startsWith('3')) return false;
+    return true;
   }
 
   String get _phoneNeed => _country.minLen == _country.maxLen
@@ -120,9 +208,13 @@ class _RegisterPageState extends State<RegisterPage> {
       return 'Enter your first and last name.';
     }
     if (_gender == null) return 'Select your gender.';
-    if (!_phoneOk) return 'Phone number needs $_phoneNeed digits.';
+    if (!_phoneOk) {
+      return (_country.dial == '+92' && _phoneDigits.length == 10)
+          ? 'Pakistani mobile numbers start with 03.'
+          : 'Phone number needs $_phoneNeed digits.';
+    }
     if (!looksLikeEmail(_email.text.trim())) return 'Enter a valid email address.';
-    if (!PasswordRules.ok(_pass.text)) return 'Password: 8+ characters, a letter, a number.';
+    if (!PasswordRules.ok(_pass.text)) return 'Use 8+ chars with upper, lower, digit & symbol.';
     if (_confirm.text != _pass.text) return 'The two passwords do not match.';
     if (!_agreed) return 'Please tick the box to continue.';
     return null;
@@ -137,7 +229,12 @@ class _RegisterPageState extends State<RegisterPage> {
       backgroundColor: Colors.white,
       builder: (_) => _CountrySheet(selected: _country),
     );
-    if (c != null) setState(() => _country = c);
+    if (c != null) {
+      setState(() => _country = c);
+      // shorten an already-typed number if the new country allows fewer digits
+      _phone.value = _PhoneFormatter(c.maxLen)
+          .formatEditUpdate(TextEditingValue.empty, _phone.value);
+    }
   }
 
   Future<String?> _pickGender() {
@@ -214,12 +311,29 @@ class _RegisterPageState extends State<RegisterPage> {
     borderSide: BorderSide(color: color, width: width),
   );
 
+  // Placeholder with a RED asterisk for required fields
+  Widget _req(String text, {double size = 14.5}) => Text.rich(
+    TextSpan(
+      text: text,
+      style: TextStyle(color: const Color(0xFF222B33), fontSize: size),
+      children: [
+        TextSpan(
+            text: ' *',
+            style: TextStyle(
+                color: _danger, fontSize: size, fontWeight: FontWeight.w700)),
+      ],
+    ),
+    maxLines: 1,
+    overflow: TextOverflow.ellipsis,
+  );
+
   // Compact field style. The error text is hidden on purpose (size 0): an
   // invalid field just gets a red border and the message shows in ONE line
   // above the button, so the layout never jumps and never needs scrolling.
-  InputDecoration _dec({String? hint, IconData? icon, Widget? suffix}) {
+  InputDecoration _dec({String? hint, Widget? hintWidget, IconData? icon, Widget? suffix}) {
     return InputDecoration(
       hintText: hint,
+      hint: hintWidget,
       hintStyle: const TextStyle(color: Color(0xFF222B33), fontSize: 14.5),
       prefixIcon: icon == null ? null : Icon(icon, color: _teal, size: 20),
       prefixIconConstraints: const BoxConstraints(minWidth: 40, minHeight: 36),
@@ -289,7 +403,8 @@ class _RegisterPageState extends State<RegisterPage> {
                     child: AutofillGroup(
                       child: Form(
                         key: _form,
-                        autovalidateMode: AutovalidateMode.onUserInteraction,
+                        autovalidateMode:
+                        _tried ? AutovalidateMode.onUserInteraction : AutovalidateMode.disabled,
                         child: Column(
                           mainAxisSize: MainAxisSize.min,
                           crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -328,7 +443,7 @@ class _RegisterPageState extends State<RegisterPage> {
                                   textCapitalization: TextCapitalization.words,
                                   autofillHints: const [AutofillHints.givenName],
                                   cursorColor: _teal,
-                                  decoration: _dec(hint: 'First name'),
+                                  decoration: _dec(hintWidget: _req('First name')),
                                   validator: (v) =>
                                   looksLikeName(v ?? '') ? null : 'x',
                                 ),
@@ -341,7 +456,7 @@ class _RegisterPageState extends State<RegisterPage> {
                                   textCapitalization: TextCapitalization.words,
                                   autofillHints: const [AutofillHints.familyName],
                                   cursorColor: _teal,
-                                  decoration: _dec(hint: 'Last name'),
+                                  decoration: _dec(hintWidget: _req('Last name')),
                                   validator: (v) =>
                                   looksLikeName(v ?? '') ? null : 'x',
                                 ),
@@ -370,14 +485,11 @@ class _RegisterPageState extends State<RegisterPage> {
                                             color: _teal),
                                       ).copyWith(
                                           errorText: state.hasError ? 'x' : null),
-                                      child: Text(
-                                        _gender ?? 'Gender',
-                                        style: TextStyle(
-                                            fontSize: 14.5,
-                                            color: _gender == null
-                                                ? const Color(0xFF222B33)
-                                                : Colors.black87),
-                                      ),
+                                      child: _gender == null
+                                          ? _req('Gender')
+                                          : Text(_gender!,
+                                          style: const TextStyle(
+                                              fontSize: 14.5, color: Colors.black87)),
                                     ),
                                   ),
                                 ),
@@ -411,9 +523,15 @@ class _RegisterPageState extends State<RegisterPage> {
                                     decoration: _dec(),
                                     child: Row(children: [
                                       Expanded(
-                                        child: Text('${_country.flag} ${_country.dial}',
-                                            style: const TextStyle(fontSize: 14.5),
-                                            overflow: TextOverflow.ellipsis),
+                                        child: Row(children: [
+                                          _flag(_country.iso, width: 22, height: 15),
+                                          const SizedBox(width: 6),
+                                          Flexible(
+                                            child: Text(_country.dial,
+                                                style: const TextStyle(fontSize: 14.5),
+                                                overflow: TextOverflow.ellipsis),
+                                          ),
+                                        ]),
                                       ),
                                       const Icon(Icons.arrow_drop_down,
                                           size: 22, color: _teal),
@@ -430,12 +548,9 @@ class _RegisterPageState extends State<RegisterPage> {
                                   autofillHints: const [
                                     AutofillHints.telephoneNumberNational
                                   ],
-                                  inputFormatters: [
-                                    FilteringTextInputFormatter.digitsOnly,
-                                    LengthLimitingTextInputFormatter(15),
-                                  ],
+                                  inputFormatters: [_PhoneFormatter(_country.maxLen)],
                                   cursorColor: _teal,
-                                  decoration: _dec(hint: 'Phone number'),
+                                  decoration: _dec(hintWidget: _req('Phone number')),
                                   validator: (_) => _phoneOk ? null : 'x',
                                 ),
                               ),
@@ -450,7 +565,7 @@ class _RegisterPageState extends State<RegisterPage> {
                               autofillHints: const [AutofillHints.email],
                               cursorColor: _teal,
                               decoration:
-                              _dec(hint: 'Email', icon: Icons.mail_outline_rounded),
+                              _dec(hintWidget: _req('Email'), icon: Icons.mail_outline_rounded),
                               validator: (v) =>
                               looksLikeEmail((v ?? '').trim()) ? null : 'x',
                             ),
@@ -466,7 +581,7 @@ class _RegisterPageState extends State<RegisterPage> {
                                   autofillHints: const [AutofillHints.newPassword],
                                   cursorColor: _teal,
                                   decoration: _dec(
-                                    hint: 'Password',
+                                    hintWidget: _req('Password'),
                                     suffix: IconButton(
                                       tooltip: _showPass ? 'Hide password' : 'Show password',
                                       padding: EdgeInsets.zero,
@@ -496,7 +611,7 @@ class _RegisterPageState extends State<RegisterPage> {
                                   onFieldSubmitted: (_) => _submit(),
                                   autofillHints: const [AutofillHints.newPassword],
                                   cursorColor: _teal,
-                                  decoration: _dec(hint: 'Confirm'),
+                                  decoration: _dec(hintWidget: _req('Confirm')),
                                   validator: (v) => v == _pass.text ? null : 'x',
                                 ),
                               ),
@@ -509,9 +624,11 @@ class _RegisterPageState extends State<RegisterPage> {
                               child: Row(
                                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                 children: [
-                                  _ruleChip(PasswordRules.hasLength(pass), '8+ characters'),
-                                  _ruleChip(PasswordRules.hasLetter(pass), 'Letter'),
-                                  _ruleChip(PasswordRules.hasNumber(pass), 'Number'),
+                                  _ruleChip(PasswordRules.hasLength(pass), '8+'),
+                                  _ruleChip(PasswordRules.hasUpper(pass), 'A-Z'),
+                                  _ruleChip(PasswordRules.hasLower(pass), 'a-z'),
+                                  _ruleChip(PasswordRules.hasNumber(pass), '0-9'),
+                                  _ruleChip(PasswordRules.hasSpecial(pass), 'Symbol'),
                                   _ruleChip(
                                       _confirm.text.isNotEmpty && _confirm.text == pass,
                                       'Match'),
@@ -701,7 +818,7 @@ class _CountrySheetState extends State<_CountrySheet> {
                   final c = list[i];
                   final isSelected = c.name == widget.selected.name;
                   return ListTile(
-                    leading: Text(c.flag, style: const TextStyle(fontSize: 26)),
+                    leading: SizedBox(width: 34, child: Center(child: _flag(c.iso, width: 30, height: 21))),
                     title: Text(c.name),
                     trailing: Text(c.dial,
                         style: TextStyle(
