@@ -58,10 +58,9 @@ class _LoginPageState extends State<LoginPage> with SingleTickerProviderStateMix
   Future<void> _submit() async {
     if (_busy) return;
     setState(() => _tried = true);
-    if (!_form.currentState!.validate()) {
-      showToast(context, 'Please fix the highlighted fields.', kind: ToastKind.error);
-      return;
-    }
+    // The field errors ("Enter your password", etc.) already tell the user
+    // what is wrong, so no extra red banner is shown.
+    if (!_form.currentState!.validate()) return;
     setState(() => _busy = true);
     final nav = Navigator.of(context);
     final messenger = ScaffoldMessenger.of(context);
