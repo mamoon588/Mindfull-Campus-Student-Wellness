@@ -20,7 +20,6 @@ class _FocusTimerPageState extends State<FocusTimerPage> with TickerProviderStat
   bool _running = false;
   Timer? _ticker;
 
-  // 👈 NEW: Separate controllers for Hours and Minutes
   final TextEditingController _hoursController = TextEditingController(text: '0');
   final TextEditingController _minutesController = TextEditingController(text: '25');
 
@@ -63,7 +62,7 @@ class _FocusTimerPageState extends State<FocusTimerPage> with TickerProviderStat
       _selectedMinutes = totalMins;
       _remainingSeconds = totalMins * 60;
     });
-    FocusScope.of(context).unfocus(); // hide keyboard
+    FocusScope.of(context).unfocus();
     showToast(context, '⏱️ Timer set to ${h}h ${m}m', kind: ToastKind.success);
   }
 
@@ -104,12 +103,21 @@ class _FocusTimerPageState extends State<FocusTimerPage> with TickerProviderStat
     _ticker = null;
     _running = false;
 
-    await HapticFeedback.heavyImpact();
+    final app = context.read<AppState>();
 
-    try {
-      await _audioPlayer.play(AssetSource('audio/chime.mp3'));
-    } catch (e) {
-      await SystemSound.play(SystemSoundType.click);
+    if (app.hapticsEnabled) {
+      await HapticFeedback.heavyImpact();
+    }
+
+    if (app.focusSoundEnabled) {
+      try {
+        final soundFile = app.focusSoundType == 0 ? 'chime.mp3'
+            : app.focusSoundType == 1 ? 'soft_chime.mp3'
+            : 'nature.mp3';
+        await _audioPlayer.play(AssetSource('audio/$soundFile'));
+      } catch (e) {
+        await SystemSound.play(SystemSoundType.click);
+      }
     }
 
     _celebrate.forward(from: 0);
@@ -120,7 +128,7 @@ class _FocusTimerPageState extends State<FocusTimerPage> with TickerProviderStat
         : (elapsedMinutes.toDouble() / 60).round().clamp(0, _selectedMinutes);
 
     if (!mounted) return;
-    context.read<AppState>().recordFocusSession(
+    app.recordFocusSession(
       plannedMinutes: _selectedMinutes,
       actualMinutes: actualMinutes,
       completed: completed,
@@ -217,7 +225,6 @@ class _FocusTimerPageState extends State<FocusTimerPage> with TickerProviderStat
             ),
             const SizedBox(height: 22),
 
-            // 👈 NEW: Hours and Minutes Input Fields
             Row(
               children: [
                 Expanded(
@@ -285,6 +292,25 @@ class _FocusTimerPageState extends State<FocusTimerPage> with TickerProviderStat
                 child: const Text('End session early', style: TextStyle(color: AppColors.danger)),
               ),
             ],
+            const SizedBox(height: 20),
+            const AppCard(
+              color: AppColors.okSoft,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('🧠 How it works',
+                      style: TextStyle(fontWeight: FontWeight.w800, fontSize: 16)),
+                  SizedBox(height: 8),
+                  Text(
+                    'Pick a duration, hit Start, and put your phone face-down. '
+                        'When the timer ends you will get a gentle nudge to take a '
+                        '5-minute break. Your focus minutes are saved automatically '
+                        'and feed the Insights charts.',
+                    style: TextStyle(height: 1.45, color: AppColors.text),
+                  ),
+                ],
+              ),
+            ),
           ],
         ),
       ),

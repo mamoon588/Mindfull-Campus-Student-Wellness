@@ -120,7 +120,12 @@ class _BreathingPageState extends State<BreathingPage> {
       if (p.kind == PhaseKind.inhale) _scale = 1.0;
       if (p.kind == PhaseKind.exhale) _scale = _minScale;
     });
-    HapticFeedback.lightImpact();
+
+    // Respect Haptics setting
+    if (context.read<AppState>().hapticsEnabled) {
+      HapticFeedback.lightImpact();
+    }
+
     VoiceService.instance.say(p.voice);
     _startTimer();
   }
@@ -159,7 +164,11 @@ class _BreathingPageState extends State<BreathingPage> {
       _done = true;
       _left = 0;
     });
-    HapticFeedback.mediumImpact();
+
+    if (context.read<AppState>().hapticsEnabled) {
+      HapticFeedback.mediumImpact();
+    }
+
     VoiceService.instance.say('Well done');
     context.read<AppState>().recordBreathSession(
         technique: _t.name, rounds: _t.rounds, seconds: _t.totalSeconds);
@@ -212,6 +221,7 @@ class _BreathingPageState extends State<BreathingPage> {
     final double progress = (_running && !_done)
         ? ((_p.seconds - _left + 1) / _p.seconds).clamp(0.0, 1.0).toDouble()
         : 0.0;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return ListView(
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
@@ -222,7 +232,7 @@ class _BreathingPageState extends State<BreathingPage> {
             for (var i = 0; i < breathTechniques.length; i++)
               AppCard(
                 onTap: () => _selectTechnique(i),
-                color: i == _tech ? AppColors.primarySoft : Colors.white,
+                color: i == _tech ? AppColors.primarySoft : Theme.of(context).cardColor,
                 padding: const EdgeInsets.all(10),
                 child: Row(children: [
                   Text(breathTechniques[i].icon, style: const TextStyle(fontSize: 26)),
@@ -283,7 +293,7 @@ class _BreathingPageState extends State<BreathingPage> {
                             value: v,
                             strokeWidth: 6,
                             color: _phaseColor(),
-                            backgroundColor: const Color(0xFFE3EAE5),
+                            backgroundColor: Theme.of(context).dividerColor,
                           ),
                         ),
                       ),
@@ -297,7 +307,7 @@ class _BreathingPageState extends State<BreathingPage> {
                         height: circleSize,
                         decoration: BoxDecoration(
                           shape: BoxShape.circle,
-                          color: _phaseColor().withAlpha(46),
+                          color: isDark ? const Color(0xFF2C2C2C) : Colors.white,
                           border: Border.all(color: _phaseColor(), width: 3),
                         ),
                         alignment: Alignment.center,
@@ -308,7 +318,11 @@ class _BreathingPageState extends State<BreathingPage> {
                               _done
                                   ? '✓'
                                   : (_running ? '$_left' : '${t.phases.first.seconds}'),
-                              style: const TextStyle(fontSize: 44, fontWeight: FontWeight.w800),
+                              style: TextStyle(
+                                fontSize: 44,
+                                fontWeight: FontWeight.w800,
+                                color: Theme.of(context).textTheme.bodyLarge?.color,
+                              ),
                             ),
                             const Text('sec', style: TextStyle(color: AppColors.muted)),
                           ],
@@ -335,14 +349,21 @@ class _BreathingPageState extends State<BreathingPage> {
                 children: [
                   for (var i = 0; i < t.phases.length; i++)
                     Chip(
-                      label: Text('${t.phases[i].label} ${t.phases[i].seconds}s'),
+                      label: Text('${t.phases[i].label} ${t.phases[i].seconds}s',
+                          style: TextStyle(
+                              color: (_running && i == _phase)
+                                  ? AppColors.primaryDark
+                                  : Theme.of(context).textTheme.bodyMedium?.color
+                          )
+                      ),
                       visualDensity: VisualDensity.compact,
-                      backgroundColor:
-                      (_running && i == _phase) ? AppColors.primarySoft : Colors.white,
+                      backgroundColor: (_running && i == _phase)
+                          ? AppColors.primarySoft
+                          : Theme.of(context).cardColor,
                       side: BorderSide(
                           color: (_running && i == _phase)
                               ? AppColors.primary
-                              : AppColors.border),
+                              : Theme.of(context).dividerColor),
                     ),
                 ],
               ),

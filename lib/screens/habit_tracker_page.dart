@@ -99,7 +99,7 @@ class HabitTrackerPage extends StatelessWidget {
       isScrollControlled: true,
       useSafeArea: true,
       showDragHandle: true,
-      backgroundColor: Colors.white,
+      backgroundColor: Theme.of(context).cardColor,
       builder: (context) => Padding(
         padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
         child: _HabitEditorSheet(existing: existing),
@@ -152,7 +152,7 @@ class _HabitCard extends StatelessWidget {
           child: const Icon(Icons.delete, color: AppColors.danger),
         ),
         confirmDismiss: (direction) async {
-          HapticFeedback.mediumImpact();
+          if (app.hapticsEnabled) HapticFeedback.mediumImpact();
           final ok = await showDialog<bool>(
             context: context,
             builder: (ctx) => AlertDialog(
@@ -174,10 +174,10 @@ class _HabitCard extends StatelessWidget {
           duration: const Duration(milliseconds: 350),
           curve: Curves.easeOutCubic,
           decoration: BoxDecoration(
-            color: done ? AppColors.primarySoft : Colors.white,
+            color: done ? AppColors.primarySoft : Theme.of(context).cardColor,
             borderRadius: BorderRadius.circular(16),
             border: Border.all(
-              color: done ? AppColors.primary : const Color(0xFFE3EAE5),
+              color: done ? AppColors.primary : Theme.of(context).dividerColor,
               width: done ? 1.6 : 1,
             ),
           ),
@@ -186,7 +186,7 @@ class _HabitCard extends StatelessWidget {
             child: InkWell(
               borderRadius: BorderRadius.circular(16),
               onTap: () {
-                HapticFeedback.lightImpact();
+                if (app.hapticsEnabled) HapticFeedback.lightImpact();
                 app.toggleHabitToday(habit);
                 if (!done) {
                   showToast(context, '✅ ${habit.name} done!', kind: ToastKind.success);
@@ -208,7 +208,7 @@ class _HabitCard extends StatelessWidget {
                               fontSize: 15,
                               fontWeight: FontWeight.w800,
                               decoration: done ? TextDecoration.lineThrough : TextDecoration.none,
-                              color: done ? AppColors.primaryDark : AppColors.text,
+                              color: done ? AppColors.primaryDark : Theme.of(context).textTheme.bodyLarge?.color,
                             ),
                           ),
                           const SizedBox(height: 2),
@@ -239,7 +239,7 @@ class _HabitCard extends StatelessWidget {
                             isScrollControlled: true,
                             useSafeArea: true,
                             showDragHandle: true,
-                            backgroundColor: Colors.white,
+                            backgroundColor: Theme.of(context).cardColor,
                             builder: (context) => Padding(
                               padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
                               child: _HabitEditorSheet(existing: habit),
@@ -272,8 +272,8 @@ class _HabitCard extends StatelessWidget {
                       transitionBuilder: (child, anim) => ScaleTransition(scale: anim, child: child),
                       child: done
                           ? const Icon(Icons.check_circle, key: ValueKey('done'), color: AppColors.primary, size: 34)
-                          : const Icon(Icons.radio_button_unchecked,
-                          key: ValueKey('todo'), color: AppColors.border, size: 34),
+                          : Icon(Icons.radio_button_unchecked,
+                          key: const ValueKey('todo'), color: Theme.of(context).dividerColor, size: 34),
                     ),
                   ],
                 ),
