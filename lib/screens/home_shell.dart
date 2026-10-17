@@ -1,21 +1,20 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-
 import '../services/app_state.dart';
 import '../services/voice_service.dart';
 import '../theme.dart';
 import '../utils.dart';
-import '../widgets/common.dart';
 import 'breathing_page.dart';
 import 'crisis_page.dart';
+import 'focus_timer_page.dart';
+import 'habit_tracker_page.dart';
+import 'insights_page.dart';
 import 'journal_page.dart';
 import 'mood_page.dart';
 import 'overview_page.dart';
 import 'resources_page.dart';
 import 'sleep_page.dart';
 
-/// The dashboard sections. The first five live in the bottom navigation bar;
-/// resources and crisis open as full pages (also reachable from the drawer).
 enum Section {
   overview('Overview', '🏠'),
   mood('Mood Tracker', '📊'),
@@ -23,6 +22,9 @@ enum Section {
   sleep('Sleep Tracker', '😴'),
   journal('Journal', '📝'),
   resources('Resources', '📚'),
+  focus('Focus Timer', '⏱️'),
+  habits('Habit Tracker', '🌱'),
+  insights('Insights', '📈'),
   crisis('Crisis Support', '🆘');
 
   const Section(this.title, this.icon);
@@ -44,10 +46,27 @@ class _HomeShellState extends State<HomeShell> {
   void go(Section s) {
     if (s.index < 5) {
       setState(() => _index = s.index);
-    } else if (s == Section.resources) {
-      Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => const ResourcesPage()));
     } else {
-      Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => const CrisisPage()));
+      Navigator.of(context).push(MaterialPageRoute<void>(
+        builder: (_) => _pageFor(s),
+      ));
+    }
+  }
+
+  Widget _pageFor(Section s) {
+    switch (s) {
+      case Section.resources:
+        return const ResourcesPage();
+      case Section.focus:
+        return const FocusTimerPage();
+      case Section.habits:
+        return const HabitTrackerPage();
+      case Section.insights:
+        return const InsightsPage();
+      case Section.crisis:
+        return const CrisisPage();
+      default:
+        return const SizedBox.shrink();
     }
   }
 
@@ -75,109 +94,136 @@ class _HomeShellState extends State<HomeShell> {
     final app = context.watch<AppState>();
     final now = DateTime.now();
     final firstName = app.userName.split(' ').first;
-
     return PopScope(
       canPop: _index == 0,
       onPopInvokedWithResult: (didPop, _) {
         if (!didPop) setState(() => _index = 0);
       },
       child: Scaffold(
-      key: _scaffoldKey,
-      appBar: AppBar(
-        titleSpacing: 0,
-        title: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('${greetingFor(now.hour)}, $firstName',
-                style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w800)),
-            Text(longDate(now), style: const TextStyle(fontSize: 12, color: AppColors.muted)),
-          ],
-        ),
-        actions: [
-          Tooltip(
-            message: 'Mood check-in streak: ${app.moodStreak} days',
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-              decoration: BoxDecoration(
-                  color: AppColors.warnSoft, borderRadius: BorderRadius.circular(14)),
-              child: Text('🔥 ${app.moodStreak}',
-                  style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13)),
-            ),
-          ),
-          IconButton(
-            tooltip: 'Crisis support',
-            icon: const Text('🆘', style: TextStyle(fontSize: 20)),
-            onPressed: () => go(Section.crisis),
-          ),
-        ],
-      ),
-      drawer: Drawer(
-        child: SafeArea(
-          child: Column(
+        key: _scaffoldKey,
+        appBar: AppBar(
+          titleSpacing: 0,
+          title: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              ListTile(
-                leading: const CircleAvatar(
-                    backgroundColor: AppColors.primarySoft, child: Text('👩‍🎓')),
-                title: Text(app.userName, style: const TextStyle(fontWeight: FontWeight.w700)),
-                subtitle: Text(app.userEmail, overflow: TextOverflow.ellipsis),
-              ),
-              const Divider(),
-              for (final s in Section.values)
-                ListTile(
-                  leading: Text(s.icon, style: const TextStyle(fontSize: 20)),
-                  title: Text(s.title,
-                      style: TextStyle(
-                          color: s == Section.crisis ? AppColors.danger : null,
-                          fontWeight: FontWeight.w600)),
-                  selected: s.index < 5 && s.index == _index,
-                  selectedTileColor: AppColors.primarySoft,
-                  onTap: () {
-                    Navigator.pop(context); // close drawer
-                    go(s);
-                  },
-                ),
-              const Spacer(),
-              const Divider(),
-              ListTile(
-                leading: const Text('🚪', style: TextStyle(fontSize: 20)),
-                title: const Text('Log Out'),
-                onTap: () {
-                  Navigator.pop(context);
-                  _confirmLogout();
-                },
-              ),
+              Text('${greetingFor(now.hour)}, $firstName',
+                  style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w800)),
+              Text(longDate(now),
+                  style: const TextStyle(fontSize: 12, color: AppColors.muted)),
             ],
           ),
+          actions: [
+            Tooltip(
+              message: 'Mood check-in streak: ${app.moodStreak} days',
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                    color: AppColors.warnSoft, borderRadius: BorderRadius.circular(14)),
+                child: Text('🔥 ${app.moodStreak}',
+                    style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13)),
+              ),
+            ),
+            IconButton(
+              tooltip: 'Crisis support',
+              icon: const Text('🆘', style: TextStyle(fontSize: 20)),
+              onPressed: () => go(Section.crisis),
+            ),
+          ],
+        ),
+        drawer: Drawer(
+          // 👈 FIXED: Straight corners (no rounded edges)
+          shape: const RoundedRectangleBorder(borderRadius: BorderRadius.zero),
+          child: SafeArea(
+            child: Column(
+              children: [
+                // 👈 FIXED: Added a Close button and user info in one row
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 8, 8, 8),
+                  child: Row(
+                    children: [
+                      const CircleAvatar(
+                          backgroundColor: AppColors.primarySoft, child: Text('👩‍🎓')),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(app.userName,
+                                style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 15)),
+                            Text(app.userEmail, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 12)),
+                          ],
+                        ),
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.close, color: AppColors.muted),
+                        onPressed: () => Navigator.pop(context), // Closes the drawer
+                      ),
+                    ],
+                  ),
+                ),
+                const Divider(),
+                Expanded(
+                  child: ListView(
+                    children: [
+                      for (final s in Section.values)
+                        ListTile(
+                          leading: Text(s.icon, style: const TextStyle(fontSize: 20)),
+                          title: Text(s.title,
+                              style: TextStyle(
+                                  color: s == Section.crisis ? AppColors.danger : null,
+                                  fontWeight: FontWeight.w600)),
+                          selected: s.index < 5 && s.index == _index,
+                          selectedTileColor: AppColors.primarySoft,
+                          onTap: () {
+                            Navigator.pop(context); // close drawer
+                            go(s);
+                          },
+                        ),
+                    ],
+                  ),
+                ),
+                const Divider(),
+                ListTile(
+                  // 👈 FIXED: Professional Logout Icon instead of Door Emoji
+                  leading: const Icon(Icons.logout, color: AppColors.danger),
+                  title: const Text('Log Out', style: TextStyle(fontWeight: FontWeight.w600)),
+                  onTap: () {
+                    Navigator.pop(context);
+                    _confirmLogout();
+                  },
+                ),
+              ],
+            ),
+          ),
+        ),
+        body: IndexedStack(
+          index: _index,
+          children: [
+            OverviewPage(onNavigate: go),
+            const MoodPage(),
+            BreathingPage(active: _index == Section.breathing.index),
+            const SleepPage(),
+            const JournalPage(),
+          ],
+        ),
+        bottomNavigationBar: NavigationBar(
+          selectedIndex: _index,
+          onDestinationSelected: (i) => setState(() => _index = i),
+          destinations: [
+            for (final s in Section.values.take(5))
+              NavigationDestination(
+                icon: Text(s.icon, style: const TextStyle(fontSize: 20)),
+                label: switch (s) {
+                  Section.overview => 'Home',
+                  Section.mood => 'Mood',
+                  Section.breathing => 'Breathe',
+                  Section.sleep => 'Sleep',
+                  _ => 'Journal',
+                },
+              ),
+          ],
         ),
       ),
-      body: IndexedStack(
-        index: _index,
-        children: [
-          OverviewPage(onNavigate: go),
-          const MoodPage(),
-          BreathingPage(active: _index == Section.breathing.index),
-          const SleepPage(),
-          const JournalPage(),
-        ],
-      ),
-      bottomNavigationBar: NavigationBar(
-        selectedIndex: _index,
-        onDestinationSelected: (i) => setState(() => _index = i),
-        destinations: [
-          for (final s in Section.values.take(5))
-            NavigationDestination(
-              icon: Text(s.icon, style: const TextStyle(fontSize: 20)),
-              label: switch (s) {
-                Section.overview => 'Home',
-                Section.mood => 'Mood',
-                Section.breathing => 'Breathe',
-                Section.sleep => 'Sleep',
-                _ => 'Journal',
-              },
-            ),
-        ],
-      ),
-    ),
     );
   }
 }

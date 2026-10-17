@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-
 import '../models.dart';
 import '../services/app_state.dart';
 import '../theme.dart';
@@ -29,7 +28,6 @@ class OverviewPage extends StatelessWidget {
     final mood = app.latestMood;
     final moodOpt = mood == null ? null : moodByKey(mood.mood);
     final sleep = app.lastSleep;
-
     return ListView(
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
       children: [
@@ -57,11 +55,40 @@ class OverviewPage extends StatelessWidget {
                 mood == null ? 'Not logged yet' : (mood.date == todayKey() ? 'Today' : mood.date)),
             _StatCard('🔥', '${app.moodStreak}', 'Day Streak', 'Keep going!'),
             _StatCard('🌬️', '${app.breathCount}', 'Breathing Sessions', 'Total'),
+            _StatCard('⏱️', '${app.totalFocusMinutes}', 'Focus Minutes', 'All-time'),
+            _StatCard('🌱', '${app.habitsDoneToday}/${app.habits.length}', 'Habits Today', 'Tap to log'),
             _StatCard('📝', '${app.journals.length}', 'Journal Entries', 'Total'),
           ],
         ),
         const SizedBox(height: 14),
         _WeeklyMoodChart(moods: app.moods),
+        const SizedBox(height: 14),
+        AppCard(
+          onTap: () => onNavigate(Section.insights),
+          child: Row(
+            children: [
+              const Text('📈', style: TextStyle(fontSize: 28)),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text('See your Insights',
+                        style: TextStyle(fontWeight: FontWeight.w700, fontSize: 15)),
+                    const SizedBox(height: 2),
+                    Text(
+                      app.totalFocusMinutes == 0
+                          ? 'Start a focus session to fill your charts'
+                          : '${app.totalFocusMinutes} focus minutes • ${app.completedFocusSessions} sessions so far',
+                      style: const TextStyle(fontSize: 12, color: AppColors.muted),
+                    ),
+                  ],
+                ),
+              ),
+              const Icon(Icons.chevron_right, color: AppColors.primaryDark),
+            ],
+          ),
+        ),
         const SizedBox(height: 14),
         AppCard(
           onTap: () => onNavigate(Section.sleep),
@@ -91,6 +118,9 @@ class OverviewPage extends StatelessWidget {
         AdaptiveGrid(
           children: [
             _Action('📊', 'Check Mood', 'Log how you feel', () => onNavigate(Section.mood)),
+            _Action('⏱️', 'Focus Timer', 'Pomodoro 25 min', () => onNavigate(Section.focus)),
+            _Action('🌱', 'Habits', 'Daily check-ins', () => onNavigate(Section.habits)),
+            _Action('📈', 'Insights', 'Charts & trends', () => onNavigate(Section.insights)),
             _Action('🌬️', 'Breathe', 'Guided exercise', () => onNavigate(Section.breathing)),
             _Action('😴', 'Log Sleep', 'Track rest', () => onNavigate(Section.sleep)),
             _Action('📝', 'Journal', 'Write thoughts', () => onNavigate(Section.journal)),
@@ -107,7 +137,8 @@ class OverviewPage extends StatelessWidget {
               const Text('💡 Wellness Tip of the Day',
                   style: TextStyle(fontWeight: FontWeight.w800, fontSize: 16)),
               const SizedBox(height: 6),
-              Text(_tips[DateTime.now().day % _tips.length], style: const TextStyle(height: 1.4)),
+              Text(_tips[DateTime.now().day % _tips.length],
+                  style: const TextStyle(height: 1.4)),
             ],
           ),
         ),
@@ -124,8 +155,8 @@ class OverviewPage extends StatelessWidget {
     final (text, color) = h >= 7
         ? ('✅ Great sleep last night!', AppColors.primaryDark)
         : h >= 6
-            ? ('⚠️ Slightly below target', const Color(0xFF854D0E))
-            : ('❌ Sleep deprived - try to rest more', AppColors.danger);
+        ? ('⚠️ Slightly below target', const Color(0xFF854D0E))
+        : ('❌ Sleep deprived - try to rest more', AppColors.danger);
     return Text(text, style: TextStyle(color: color, fontWeight: FontWeight.w600));
   }
 }
@@ -174,11 +205,11 @@ class _Mini extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Column(children: [
-        Text(value,
-            style: const TextStyle(
-                fontSize: 18, fontWeight: FontWeight.w800, color: AppColors.primaryDark)),
-        Text(label, style: const TextStyle(fontSize: 12, color: AppColors.muted)),
-      ]);
+    Text(value,
+        style: const TextStyle(
+            fontSize: 18, fontWeight: FontWeight.w800, color: AppColors.primaryDark)),
+    Text(label, style: const TextStyle(fontSize: 12, color: AppColors.muted)),
+  ]);
 }
 
 class _Action extends StatelessWidget {
@@ -223,7 +254,6 @@ class _WeeklyMoodChart extends StatelessWidget {
   Widget build(BuildContext context) {
     final today = DateTime.now();
     final days = [for (var i = 6; i >= 0; i--) today.subtract(Duration(days: i))];
-
     return AppCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -236,8 +266,7 @@ class _WeeklyMoodChart extends StatelessWidget {
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
-                for (final d in days)
-                  Expanded(child: _bar(d, d == days.last)),
+                for (final d in days) Expanded(child: _bar(d, d == days.last)),
               ],
             ),
           ),
