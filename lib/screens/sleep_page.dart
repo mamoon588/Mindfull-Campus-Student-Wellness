@@ -237,9 +237,9 @@ class _WeeklySleepChart extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
+          const Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: const [
+            children: [
               Text('📊 Your Sleep This Week',
                   style: TextStyle(fontWeight: FontWeight.w800, fontSize: 16)),
               Text('🎯 7-9 h', style: TextStyle(fontSize: 12, color: AppColors.muted)),

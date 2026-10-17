@@ -325,10 +325,10 @@ class _SafetyPlanState extends State<_SafetyPlan> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Callout(
+        const Callout(
           color: AppColors.dangerSoft,
           accent: AppColors.danger,
-          child: const Text.rich(TextSpan(children: [
+          child: Text.rich(TextSpan(children: [
             TextSpan(
                 text: '🆘 My Safety Plan\n',
                 style: TextStyle(fontWeight: FontWeight.w800, color: AppColors.danger)),

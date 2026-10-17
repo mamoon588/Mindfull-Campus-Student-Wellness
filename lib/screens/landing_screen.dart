@@ -2,7 +2,8 @@ import 'package:flutter/material.dart';
 
 import '../theme.dart';
 import '../widgets/call.dart';
-import 'auth_sheet.dart';
+import 'login_page.dart';
+import 'register_page.dart';
 
 /// First screen: a swipeable welcome with the main actions pinned to the
 /// bottom of the screen, within thumb reach.
@@ -95,7 +96,7 @@ class _LandingScreenState extends State<LandingScreen> {
                                     height: 150,
                                     alignment: Alignment.center,
                                     decoration:
-                                        BoxDecoration(color: s.tint, shape: BoxShape.circle),
+                                    BoxDecoration(color: s.tint, shape: BoxShape.circle),
                                     child: Text(s.emoji, style: const TextStyle(fontSize: 70)),
                                   ),
                                   const SizedBox(height: 28),
@@ -175,7 +176,8 @@ class _LandingScreenState extends State<LandingScreen> {
                       minimumSize: const Size.fromHeight(54),
                       textStyle: const TextStyle(fontSize: 17, fontWeight: FontWeight.w700),
                     ),
-                    onPressed: () => showAuthSheet(context, register: true),
+                    onPressed: () => Navigator.of(context).push(
+                        MaterialPageRoute<void>(builder: (_) => const RegisterPage())),
                     child: const Text('Get started'),
                   ),
                   const SizedBox(height: 10),
@@ -184,7 +186,8 @@ class _LandingScreenState extends State<LandingScreen> {
                       minimumSize: const Size.fromHeight(54),
                       textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
                     ),
-                    onPressed: () => showAuthSheet(context, register: false),
+                    onPressed: () => Navigator.of(context).push(
+                        MaterialPageRoute<void>(builder: (_) => const LoginPage())),
                     child: const Text('I already have an account'),
                   ),
                   const SizedBox(height: 10),

@@ -80,11 +80,23 @@ String formatHours(double h) =>
     h == h.roundToDouble() ? h.toStringAsFixed(0) : h.toStringAsFixed(1);
 
 /// Rules for a new password: 8+ characters with at least one letter and one number.
+/// Strong password: 8+ chars with upper, lower, digit and a special character.
 class PasswordRules {
   static bool hasLength(String p) => p.length >= 8;
-  static bool hasLetter(String p) => RegExp(r'[A-Za-z]').hasMatch(p);
+  static bool hasUpper(String p) => RegExp(r'[A-Z]').hasMatch(p);
+  static bool hasLower(String p) => RegExp(r'[a-z]').hasMatch(p);
+  static bool hasLetter(String p) => hasUpper(p) || hasLower(p); // kept for older code
   static bool hasNumber(String p) => RegExp(r'\d').hasMatch(p);
-  static bool ok(String p) => hasLength(p) && hasLetter(p) && hasNumber(p);
+  static bool hasSpecial(String p) => RegExp(r'[^A-Za-z0-9\s]').hasMatch(p);
+  static bool ok(String p) =>
+      hasLength(p) && hasUpper(p) && hasLower(p) && hasNumber(p) && hasSpecial(p);
 }
-
 bool looksLikeEmail(String e) => RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$').hasMatch(e);
+
+/// Pakistani mobile number: 11 digits starting with 03 (spaces and dashes ignored).
+bool looksLikePkMobile(String p) =>
+    RegExp(r'^03\d{9}$').hasMatch(p.replaceAll(RegExp(r'[\s-]'), ''));
+
+/// A name: at least 2 characters, letters plus spaces, dots, apostrophes and hyphens.
+bool looksLikeName(String n) =>
+    n.trim().length >= 2 && RegExp(r"^[A-Za-z][A-Za-z\s.'-]*$").hasMatch(n.trim());
