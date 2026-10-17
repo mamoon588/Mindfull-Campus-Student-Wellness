@@ -15,40 +15,44 @@ class AppColors {
   static const okSoft = Color(0xFFF0FDF4);
 }
 
-ThemeData buildTheme() {
+ThemeData buildTheme({required bool isDark, required Color seedColor}) {
   final scheme = ColorScheme.fromSeed(
-    seedColor: AppColors.primary,
-    primary: AppColors.primary,
-    brightness: Brightness.light,
+    seedColor: seedColor,
+    brightness: isDark ? Brightness.dark : Brightness.light,
+    primary: seedColor,
   );
+
   final inputBorder = OutlineInputBorder(
     borderRadius: BorderRadius.circular(12),
-    borderSide: const BorderSide(color: AppColors.border),
+    borderSide: BorderSide(color: isDark ? Colors.grey.shade700 : AppColors.border),
   );
+
   return ThemeData(
     useMaterial3: true,
     colorScheme: scheme,
-    scaffoldBackgroundColor: AppColors.bg,
-    appBarTheme: const AppBarTheme(
-      backgroundColor: Colors.white,
-      foregroundColor: AppColors.text,
+    scaffoldBackgroundColor: isDark ? const Color(0xFF121212) : AppColors.bg,
+    cardColor: isDark ? const Color(0xFF1E1E1E) : Colors.white,
+    appBarTheme: AppBarTheme(
+      backgroundColor: isDark ? const Color(0xFF1E1E1E) : Colors.white,
+      foregroundColor: isDark ? Colors.white : AppColors.text,
       elevation: 0,
       scrolledUnderElevation: 1,
     ),
     inputDecorationTheme: InputDecorationTheme(
       filled: true,
-      fillColor: Colors.white,
-      contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      fillColor: isDark ? const Color(0xFF2C2C2C) : Colors.white,
+      // 👈 FIXED: Increased vertical padding from 12 to 16 to fix text cut-off
+      contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 16),
       border: inputBorder,
       enabledBorder: inputBorder,
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
-        borderSide: const BorderSide(color: AppColors.primary, width: 2),
+        borderSide: BorderSide(color: seedColor, width: 2),
       ),
     ),
     filledButtonTheme: FilledButtonThemeData(
       style: FilledButton.styleFrom(
-        backgroundColor: AppColors.primary,
+        backgroundColor: seedColor,
         foregroundColor: Colors.white,
         minimumSize: const Size(48, 48),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -56,15 +60,15 @@ ThemeData buildTheme() {
     ),
     outlinedButtonTheme: OutlinedButtonThemeData(
       style: OutlinedButton.styleFrom(
-        foregroundColor: AppColors.primaryDark,
+        foregroundColor: seedColor,
         minimumSize: const Size(48, 48),
-        side: const BorderSide(color: AppColors.primary),
+        side: BorderSide(color: seedColor),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       ),
     ),
     navigationBarTheme: NavigationBarThemeData(
-      backgroundColor: Colors.white,
-      indicatorColor: AppColors.primarySoft,
+      backgroundColor: isDark ? const Color(0xFF1E1E1E) : Colors.white,
+      indicatorColor: seedColor.withAlpha(50),
       labelTextStyle: WidgetStateProperty.all(
         const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
       ),
