@@ -223,6 +223,7 @@ class _MeditationCardState extends State<MeditationCard> {
                 ),
             ],
           ),
+
           const SizedBox(height: 16),
           SizedBox(
             width: 170,

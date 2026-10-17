@@ -28,6 +28,7 @@ class OverviewPage extends StatelessWidget {
     final mood = app.latestMood;
     final moodOpt = mood == null ? null : moodByKey(mood.mood);
     final sleep = app.lastSleep;
+
     return ListView(
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
       children: [
@@ -51,8 +52,12 @@ class OverviewPage extends StatelessWidget {
         ],
         AdaptiveGrid(
           children: [
-            _StatCard(moodOpt?.emoji ?? '😐', moodOpt?.label ?? '—', 'Current Mood',
-                mood == null ? 'Not logged yet' : (mood.date == todayKey() ? 'Today' : mood.date)),
+            // 👈 FIXED: Replaced '—' with clear, professional wording
+            _StatCard(
+                moodOpt?.emoji ?? '📝',
+                moodOpt?.label ?? 'Log Mood',
+                'Current Mood',
+                mood == null ? 'Tap to check in' : (mood.date == todayKey() ? 'Logged today' : mood.date)),
             _StatCard('🔥', '${app.moodStreak}', 'Day Streak', 'Keep going!'),
             _StatCard('🌬️', '${app.breathCount}', 'Breathing Sessions', 'Total'),
             _StatCard('⏱️', '${app.totalFocusMinutes}', 'Focus Minutes', 'All-time'),

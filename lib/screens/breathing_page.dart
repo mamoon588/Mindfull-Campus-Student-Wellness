@@ -55,8 +55,6 @@ const breathTechniques = <BreathTechnique>[
 
 class BreathingPage extends StatefulWidget {
   const BreathingPage({super.key, required this.active});
-
-  /// False while another tab is showing; the session is reset when the user leaves.
   final bool active;
 
   @override
@@ -281,7 +279,7 @@ class _BreathingPageState extends State<BreathingPage> {
                         child: TweenAnimationBuilder<double>(
                           tween: Tween<double>(end: progress),
                           duration: const Duration(milliseconds: 900),
-                          builder: (context, v, _) => CircularProgressIndicator(
+                          builder: (context, v, child) => CircularProgressIndicator(
                             value: v,
                             strokeWidth: 6,
                             color: _phaseColor(),
@@ -325,8 +323,8 @@ class _BreathingPageState extends State<BreathingPage> {
                 _done
                     ? 'Well done 🎉'
                     : (_running
-                        ? (_paused ? 'Paused - tap the circle to resume' : _p.instruction)
-                        : 'Tap the circle to begin'),
+                    ? (_paused ? 'Paused - tap the circle to resume' : _p.instruction)
+                    : 'Tap the circle to begin'),
                 style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
               ),
               const SizedBox(height: 12),
@@ -340,7 +338,7 @@ class _BreathingPageState extends State<BreathingPage> {
                       label: Text('${t.phases[i].label} ${t.phases[i].seconds}s'),
                       visualDensity: VisualDensity.compact,
                       backgroundColor:
-                          (_running && i == _phase) ? AppColors.primarySoft : Colors.white,
+                      (_running && i == _phase) ? AppColors.primarySoft : Colors.white,
                       side: BorderSide(
                           color: (_running && i == _phase)
                               ? AppColors.primary
@@ -381,16 +379,6 @@ class _BreathingPageState extends State<BreathingPage> {
                   _Stat('${app.breathStreak}', 'Day streak'),
                 ],
               ),
-              if (VoiceService.instance.available)
-                SwitchListTile(
-                  contentPadding: EdgeInsets.zero,
-                  title: const Text('🔔 Voice guide'),
-                  value: VoiceService.instance.enabled,
-                  onChanged: (v) {
-                    setState(() => VoiceService.instance.enabled = v);
-                    if (!v) VoiceService.instance.stop();
-                  },
-                ),
             ],
           ),
         ),
@@ -405,9 +393,9 @@ class _Stat extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Column(children: [
-        Text(value,
-            style: const TextStyle(
-                fontSize: 20, fontWeight: FontWeight.w800, color: AppColors.primaryDark)),
-        Text(label, style: const TextStyle(fontSize: 12, color: AppColors.muted)),
-      ]);
+    Text(value,
+        style: const TextStyle(
+            fontSize: 20, fontWeight: FontWeight.w800, color: AppColors.primaryDark)),
+    Text(label, style: const TextStyle(fontSize: 12, color: AppColors.muted)),
+  ]);
 }

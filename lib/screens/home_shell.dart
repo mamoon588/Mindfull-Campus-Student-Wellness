@@ -21,10 +21,10 @@ enum Section {
   breathing('Breathing', '🌬️'),
   sleep('Sleep Tracker', '😴'),
   journal('Journal', '📝'),
-  resources('Resources', '📚'),
   focus('Focus Timer', '⏱️'),
   habits('Habit Tracker', '🌱'),
   insights('Insights', '📈'),
+  resources('Resources', '📚'),
   crisis('Crisis Support', '🆘');
 
   const Section(this.title, this.icon);
@@ -44,7 +44,7 @@ class _HomeShellState extends State<HomeShell> {
   int _index = 0;
 
   void go(Section s) {
-    if (s.index < 5) {
+    if (s.index < 8) { // 👈 ALLOW FIRST 8 MODULES IN BOTTOM NAV
       setState(() => _index = s.index);
     } else {
       Navigator.of(context).push(MaterialPageRoute<void>(
@@ -75,8 +75,14 @@ class _HomeShellState extends State<HomeShell> {
     final ok = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('🚪 Ready to leave?'),
-        content: const Text('Your data is saved on this device.'),
+        title: const Row(
+          children: [
+            Icon(Icons.logout, color: AppColors.danger),
+            SizedBox(width: 10),
+            Text('Ready to leave?'),
+          ],
+        ),
+        content: const Text('Your data is safely saved on this device.'),
         actions: [
           TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Stay')),
           FilledButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Log Out')),
@@ -94,6 +100,13 @@ class _HomeShellState extends State<HomeShell> {
     final app = context.watch<AppState>();
     final now = DateTime.now();
     final firstName = app.userName.split(' ').first;
+
+    final String avatar = app.userGender.toLowerCase() == 'male'
+        ? '👨‍🎓'
+        : app.userGender.toLowerCase() == 'female'
+        ? '👩‍🎓'
+        : '🧑‍🎓';
+
     return PopScope(
       canPop: _index == 0,
       onPopInvokedWithResult: (didPop, _) {
@@ -131,18 +144,18 @@ class _HomeShellState extends State<HomeShell> {
           ],
         ),
         drawer: Drawer(
-          // 👈 FIXED: Straight corners (no rounded edges)
           shape: const RoundedRectangleBorder(borderRadius: BorderRadius.zero),
           child: SafeArea(
             child: Column(
               children: [
-                // 👈 FIXED: Added a Close button and user info in one row
                 Padding(
                   padding: const EdgeInsets.fromLTRB(16, 8, 8, 8),
                   child: Row(
                     children: [
-                      const CircleAvatar(
-                          backgroundColor: AppColors.primarySoft, child: Text('👩‍🎓')),
+                      CircleAvatar(
+                        backgroundColor: AppColors.primarySoft,
+                        child: Text(avatar, style: const TextStyle(fontSize: 20)),
+                      ),
                       const SizedBox(width: 12),
                       Expanded(
                         child: Column(
@@ -156,7 +169,7 @@ class _HomeShellState extends State<HomeShell> {
                       ),
                       IconButton(
                         icon: const Icon(Icons.close, color: AppColors.muted),
-                        onPressed: () => Navigator.pop(context), // Closes the drawer
+                        onPressed: () => Navigator.pop(context),
                       ),
                     ],
                   ),
@@ -172,7 +185,7 @@ class _HomeShellState extends State<HomeShell> {
                               style: TextStyle(
                                   color: s == Section.crisis ? AppColors.danger : null,
                                   fontWeight: FontWeight.w600)),
-                          selected: s.index < 5 && s.index == _index,
+                          selected: s.index < 8 && s.index == _index,
                           selectedTileColor: AppColors.primarySoft,
                           onTap: () {
                             Navigator.pop(context); // close drawer
@@ -184,7 +197,6 @@ class _HomeShellState extends State<HomeShell> {
                 ),
                 const Divider(),
                 ListTile(
-                  // 👈 FIXED: Professional Logout Icon instead of Door Emoji
                   leading: const Icon(Icons.logout, color: AppColors.danger),
                   title: const Text('Log Out', style: TextStyle(fontWeight: FontWeight.w600)),
                   onTap: () {
@@ -204,13 +216,17 @@ class _HomeShellState extends State<HomeShell> {
             BreathingPage(active: _index == Section.breathing.index),
             const SleepPage(),
             const JournalPage(),
+            const FocusTimerPage(),
+            const HabitTrackerPage(),
+            const InsightsPage(),
           ],
         ),
+        // 👈 FIXED: Shows first 8 items now
         bottomNavigationBar: NavigationBar(
           selectedIndex: _index,
           onDestinationSelected: (i) => setState(() => _index = i),
           destinations: [
-            for (final s in Section.values.take(5))
+            for (final s in Section.values.take(8))
               NavigationDestination(
                 icon: Text(s.icon, style: const TextStyle(fontSize: 20)),
                 label: switch (s) {
@@ -218,7 +234,10 @@ class _HomeShellState extends State<HomeShell> {
                   Section.mood => 'Mood',
                   Section.breathing => 'Breathe',
                   Section.sleep => 'Sleep',
-                  _ => 'Journal',
+                  Section.journal => 'Journal',
+                  Section.focus => 'Focus',
+                  Section.habits => 'Habits',
+                  _ => 'Insights',
                 },
               ),
           ],
