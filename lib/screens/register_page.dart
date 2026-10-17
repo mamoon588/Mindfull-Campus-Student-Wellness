@@ -125,7 +125,8 @@ final List<_Country> _countries = [
 // Flag drawn as an image (emoji flags do not render on Windows / Chrome)
 Widget _flag(String iso, {double width = 26, double height = 18}) => CountryFlag.fromCountryCode(
   iso,
-  theme: ImageTheme(width: width, height: height, shape: const RoundedRectangle(3)),
+  width: width,
+  height: height,
 );
 
 // Digits only, and never longer than the selected country allows

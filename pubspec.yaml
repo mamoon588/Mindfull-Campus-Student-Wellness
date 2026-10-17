@@ -1,5 +1,5 @@
-name: project
-description: Mindful Campus - student mental wellness companion (Flutter port of the web app).
+name: mindful_campus
+description: Mindful Campus - student mental wellness companion.
 publish_to: 'none'
 version: 1.0.0+1
 
@@ -13,9 +13,13 @@ dependencies:
   shared_preferences: ^2.2.3
   flutter_tts: ^4.0.2
   url_launcher: ^6.3.0
-  country_flags: ^4.1.2
   fl_chart: ^1.0.0
   audioplayers: ^6.0.0
+  share_plus: ^10.0.0
+  country_flags: ^3.1.0
+  pdf: ^3.10.8
+  csv: ^6.0.0
+  path_provider: ^2.1.2
 
 dev_dependencies:
   flutter_test:
