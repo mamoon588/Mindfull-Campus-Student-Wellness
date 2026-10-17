@@ -20,7 +20,10 @@ class _FocusTimerPageState extends State<FocusTimerPage> with TickerProviderStat
   bool _running = false;
   Timer? _ticker;
 
-  final TextEditingController _timeController = TextEditingController(text: '25');
+  // 👈 NEW: Separate controllers for Hours and Minutes
+  final TextEditingController _hoursController = TextEditingController(text: '0');
+  final TextEditingController _minutesController = TextEditingController(text: '25');
+
   late final AnimationController _celebrate;
   final AudioPlayer _audioPlayer = AudioPlayer();
 
@@ -37,7 +40,8 @@ class _FocusTimerPageState extends State<FocusTimerPage> with TickerProviderStat
   void dispose() {
     _ticker?.cancel();
     _celebrate.dispose();
-    _timeController.dispose();
+    _hoursController.dispose();
+    _minutesController.dispose();
     _audioPlayer.dispose();
     super.dispose();
   }
@@ -46,17 +50,21 @@ class _FocusTimerPageState extends State<FocusTimerPage> with TickerProviderStat
 
   void _applyCustomTime() {
     if (_running) return;
-    final input = int.tryParse(_timeController.text);
-    if (input == null || input <= 0 || input > 180) {
+    final h = int.tryParse(_hoursController.text) ?? 0;
+    final m = int.tryParse(_minutesController.text) ?? 0;
+    final totalMins = (h * 60) + m;
+
+    if (totalMins <= 0 || totalMins > 180) {
       showToast(context, '⚠️ Enter a valid time between 1 and 180 mins', kind: ToastKind.error);
       return;
     }
+
     setState(() {
-      _selectedMinutes = input;
-      _remainingSeconds = input * 60;
+      _selectedMinutes = totalMins;
+      _remainingSeconds = totalMins * 60;
     });
     FocusScope.of(context).unfocus(); // hide keyboard
-    showToast(context, '⏱️ Timer set to $input minutes', kind: ToastKind.success);
+    showToast(context, '⏱️ Timer set to ${h}h ${m}m', kind: ToastKind.success);
   }
 
   void _start() {
@@ -98,11 +106,9 @@ class _FocusTimerPageState extends State<FocusTimerPage> with TickerProviderStat
 
     await HapticFeedback.heavyImpact();
 
-    // Play the relaxing tune
     try {
       await _audioPlayer.play(AssetSource('audio/chime.mp3'));
     } catch (e) {
-      // Fallback if the audio file is missing
       await SystemSound.play(SystemSoundType.click);
     }
 
@@ -211,17 +217,29 @@ class _FocusTimerPageState extends State<FocusTimerPage> with TickerProviderStat
             ),
             const SizedBox(height: 22),
 
-            // CUSTOM TIME INPUT
+            // 👈 NEW: Hours and Minutes Input Fields
             Row(
               children: [
                 Expanded(
                   child: TextField(
-                    controller: _timeController,
+                    controller: _hoursController,
                     keyboardType: TextInputType.number,
                     enabled: !_running,
                     decoration: const InputDecoration(
-                      labelText: 'Custom Time (Minutes)',
-                      prefixIcon: Icon(Icons.edit_outlined, color: AppColors.primary),
+                      labelText: 'Hours',
+                      prefixIcon: Icon(Icons.access_time, color: AppColors.primary),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: TextField(
+                    controller: _minutesController,
+                    keyboardType: TextInputType.number,
+                    enabled: !_running,
+                    decoration: const InputDecoration(
+                      labelText: 'Minutes',
+                      prefixIcon: Icon(Icons.timer, color: AppColors.primary),
                     ),
                   ),
                 ),
