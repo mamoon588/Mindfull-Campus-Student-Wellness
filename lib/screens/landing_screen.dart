@@ -5,8 +5,6 @@ import '../widgets/call.dart';
 import 'login_page.dart';
 import 'register_page.dart';
 
-/// First screen: a swipeable welcome with the main actions pinned to the
-/// bottom of the screen, within thumb reach.
 class LandingScreen extends StatefulWidget {
   const LandingScreen({super.key});
 
@@ -45,16 +43,25 @@ class _LandingScreenState extends State<LandingScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final bgColor = Theme.of(context).scaffoldBackgroundColor;
+    final cardColor = Theme.of(context).cardColor;
+    final textColor = Theme.of(context).textTheme.bodyLarge?.color;
+    final mutedColor = Theme.of(context).textTheme.bodyMedium?.color;
+
     return Scaffold(
-      backgroundColor: AppColors.bg,
+      backgroundColor: bgColor,
       body: Column(
         children: [
           Expanded(
             child: Container(
               width: double.infinity,
-              decoration: const BoxDecoration(
+              decoration: BoxDecoration(
+                // 👈 Dynamic gradient for light/dark mode
                 gradient: LinearGradient(
-                  colors: [Color(0xFFE3F5EA), AppColors.bg],
+                  colors: isDark
+                      ? [const Color(0xFF1E1E1E), bgColor]
+                      : [const Color(0xFFE3F5EA), bgColor],
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
                 ),
@@ -102,15 +109,16 @@ class _LandingScreenState extends State<LandingScreen> {
                                   const SizedBox(height: 28),
                                   Text(s.title,
                                       textAlign: TextAlign.center,
-                                      style: const TextStyle(
+                                      style: TextStyle(
                                           fontSize: 26,
                                           fontWeight: FontWeight.w800,
-                                          height: 1.2)),
+                                          height: 1.2,
+                                          color: textColor)), // 👈 Dynamic Text Color
                                   const SizedBox(height: 10),
                                   Text(s.body,
                                       textAlign: TextAlign.center,
-                                      style: const TextStyle(
-                                          fontSize: 16, color: AppColors.muted, height: 1.45)),
+                                      style: TextStyle(
+                                          fontSize: 16, color: mutedColor, height: 1.45)), // 👈 Dynamic Text Color
                                   const SizedBox(height: 16),
                                 ],
                               ),
@@ -158,11 +166,15 @@ class _LandingScreenState extends State<LandingScreen> {
           Container(
             width: double.infinity,
             padding: const EdgeInsets.fromLTRB(24, 20, 24, 8),
-            decoration: const BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+            decoration: BoxDecoration(
+              color: cardColor, // 👈 Dynamic Card Color
+              borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
               boxShadow: [
-                BoxShadow(color: Color(0x14000000), blurRadius: 16, offset: Offset(0, -4)),
+                BoxShadow(
+                    color: isDark ? Colors.black45 : const Color(0x14000000),
+                    blurRadius: 16,
+                    offset: const Offset(0, -4)
+                ),
               ],
             ),
             child: SafeArea(
@@ -191,9 +203,9 @@ class _LandingScreenState extends State<LandingScreen> {
                     child: const Text('I already have an account'),
                   ),
                   const SizedBox(height: 10),
-                  const Text('🔒 Your entries stay on this phone',
+                  Text('🔒 Your entries stay on this phone',
                       textAlign: TextAlign.center,
-                      style: TextStyle(fontSize: 13, color: AppColors.muted)),
+                      style: TextStyle(fontSize: 13, color: mutedColor)),
                   TextButton(
                     onPressed: () => callNumber(context, '1166'),
                     child: const Text('In crisis? Call 1166',
