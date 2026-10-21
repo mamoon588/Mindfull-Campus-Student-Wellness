@@ -48,17 +48,17 @@ final phq9Spec = ScreeningSpec(
     final severity = s <= 4
         ? 'Minimal'
         : s <= 9
-            ? 'Mild'
-            : s <= 14
-                ? 'Moderate'
-                : s <= 19
-                    ? 'Moderately Severe'
-                    : 'Severe';
+        ? 'Mild'
+        : s <= 14
+        ? 'Moderate'
+        : s <= 19
+        ? 'Moderately Severe'
+        : 'Severe';
     var advice = s >= 15
         ? '🆘 Please reach out to a professional or call 1166.'
         : s >= 10
-            ? '⚠️ Consider talking to a counselor.'
-            : '✅ Keep taking care of yourself!';
+        ? '⚠️ Consider talking to a counselor.'
+        : '✅ Keep taking care of yourself!';
     final selfHarm = a.last > 0;
     if (selfHarm) {
       advice += '\n\nYou indicated thoughts of hurting yourself. Please talk to someone you '
@@ -85,10 +85,10 @@ final gad7Spec = ScreeningSpec(
     final advice = s >= 15
         ? '🆘 Please seek professional support.'
         : s >= 10
-            ? '⚠️ Consider coping strategies and talking to a counselor.'
-            : s >= 5
-                ? '⚠️ Mild - monitor how you feel.'
-                : '✅ Minimal anxiety.';
+        ? '⚠️ Consider coping strategies and talking to a counselor.'
+        : s >= 5
+        ? '⚠️ Mild - monitor how you feel.'
+        : '✅ Minimal anxiety.';
     return ScreeningResult('Score: $s/21', advice, urgent: s >= 15);
   },
 );
@@ -99,7 +99,8 @@ Future<void> showScreening(BuildContext context, ScreeningSpec spec) {
     isScrollControlled: true,
     useSafeArea: true,
     showDragHandle: true,
-    backgroundColor: Colors.white,
+    // 👈 FIXED: Dynamic background color instead of hardcoded white
+    backgroundColor: Theme.of(context).cardColor,
     builder: (_) => _ScreeningSheet(spec: spec),
   );
 }
@@ -121,6 +122,7 @@ class _ScreeningSheetState extends State<_ScreeningSheet> {
     final spec = widget.spec;
     final answered = _answers.where((a) => a != null).length;
     final complete = answered == _answers.length;
+
     return ListView(
       padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
       children: [

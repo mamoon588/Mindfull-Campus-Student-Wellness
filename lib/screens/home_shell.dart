@@ -13,6 +13,7 @@ import 'journal_page.dart';
 import 'mood_page.dart';
 import 'overview_page.dart';
 import 'resources_page.dart';
+import 'settings_page.dart';
 import 'sleep_page.dart';
 
 enum Section {
@@ -25,7 +26,8 @@ enum Section {
   habits('Habit Tracker', '🌱'),
   insights('Insights', '📈'),
   resources('Resources', '📚'),
-  crisis('Crisis Support', '🆘');
+  crisis('Crisis Support', '🆘'),
+  settings('Settings', '⚙️');
 
   const Section(this.title, this.icon);
   final String title;
@@ -44,7 +46,7 @@ class _HomeShellState extends State<HomeShell> {
   int _index = 0;
 
   void go(Section s) {
-    if (s.index < 8) { // 👈 ALLOW FIRST 8 MODULES IN BOTTOM NAV
+    if (s.index < 5) {
       setState(() => _index = s.index);
     } else {
       Navigator.of(context).push(MaterialPageRoute<void>(
@@ -65,6 +67,8 @@ class _HomeShellState extends State<HomeShell> {
         return const InsightsPage();
       case Section.crisis:
         return const CrisisPage();
+      case Section.settings:
+        return const SettingsPage();
       default:
         return const SizedBox.shrink();
     }
@@ -126,15 +130,13 @@ class _HomeShellState extends State<HomeShell> {
             ],
           ),
           actions: [
-            Tooltip(
-              message: 'Mood check-in streak: ${app.moodStreak} days',
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                decoration: BoxDecoration(
-                    color: AppColors.warnSoft, borderRadius: BorderRadius.circular(14)),
-                child: Text('🔥 ${app.moodStreak}',
-                    style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13)),
+            IconButton(
+              tooltip: app.isDarkMode ? 'Switch to Light Mode' : 'Switch to Dark Mode',
+              icon: Icon(
+                app.isDarkMode ? Icons.light_mode : Icons.dark_mode,
+                color: app.isDarkMode ? Colors.amber : AppColors.muted,
               ),
+              onPressed: () => app.toggleDarkMode(!app.isDarkMode),
             ),
             IconButton(
               tooltip: 'Crisis support',
@@ -168,6 +170,13 @@ class _HomeShellState extends State<HomeShell> {
                         ),
                       ),
                       IconButton(
+                        icon: const Icon(Icons.settings, color: AppColors.muted),
+                        onPressed: () {
+                          Navigator.pop(context);
+                          go(Section.settings);
+                        },
+                      ),
+                      IconButton(
                         icon: const Icon(Icons.close, color: AppColors.muted),
                         onPressed: () => Navigator.pop(context),
                       ),
@@ -185,10 +194,10 @@ class _HomeShellState extends State<HomeShell> {
                               style: TextStyle(
                                   color: s == Section.crisis ? AppColors.danger : null,
                                   fontWeight: FontWeight.w600)),
-                          selected: s.index < 8 && s.index == _index,
+                          selected: s.index < 5 && s.index == _index,
                           selectedTileColor: AppColors.primarySoft,
                           onTap: () {
-                            Navigator.pop(context); // close drawer
+                            Navigator.pop(context);
                             go(s);
                           },
                         ),
@@ -208,6 +217,7 @@ class _HomeShellState extends State<HomeShell> {
             ),
           ),
         ),
+        // 👈 FIXED: Only 5 modules in the IndexedStack
         body: IndexedStack(
           index: _index,
           children: [
@@ -216,17 +226,14 @@ class _HomeShellState extends State<HomeShell> {
             BreathingPage(active: _index == Section.breathing.index),
             const SleepPage(),
             const JournalPage(),
-            const FocusTimerPage(),
-            const HabitTrackerPage(),
-            const InsightsPage(),
           ],
         ),
-        // 👈 FIXED: Shows first 8 items now
+        // 👈 FIXED: Only shows first 5 modules on the bottom bar
         bottomNavigationBar: NavigationBar(
           selectedIndex: _index,
           onDestinationSelected: (i) => setState(() => _index = i),
           destinations: [
-            for (final s in Section.values.take(8))
+            for (final s in Section.values.take(5))
               NavigationDestination(
                 icon: Text(s.icon, style: const TextStyle(fontSize: 20)),
                 label: switch (s) {
@@ -234,10 +241,7 @@ class _HomeShellState extends State<HomeShell> {
                   Section.mood => 'Mood',
                   Section.breathing => 'Breathe',
                   Section.sleep => 'Sleep',
-                  Section.journal => 'Journal',
-                  Section.focus => 'Focus',
-                  Section.habits => 'Habits',
-                  _ => 'Insights',
+                  _ => 'Journal',
                 },
               ),
           ],

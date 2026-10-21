@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../services/app_state.dart';
+import '../services/notification_service.dart';
 import '../theme.dart';
 import '../utils.dart';
 import '../widgets/common.dart';
@@ -58,6 +59,26 @@ class _SettingsPageState extends State<SettingsPage> {
     showToast(context, 'Emergency contact saved', kind: ToastKind.success);
   }
 
+  void _toggleReminder(bool value) async {
+    final app = context.read<AppState>();
+    app.setReminder(value, app.reminderTime);
+
+    if (value) {
+      // 👈 Ask for permission here!
+      await NotificationService.instance.requestPermissions();
+
+      final parts = app.reminderTime.split(':');
+      await NotificationService.instance.scheduleDailyReminder(int.parse(parts[0]), int.parse(parts[1]));
+
+      if (!mounted) return;
+      showToast(context, 'Reminder set for ${app.reminderTime}', kind: ToastKind.success);
+    } else {
+      await NotificationService.instance.cancelReminder();
+      if (!mounted) return;
+      showToast(context, 'Reminder turned off', kind: ToastKind.info);
+    }
+  }
+
   void _pickTime() async {
     final app = context.read<AppState>();
     final parts = app.reminderTime.split(':');
@@ -67,6 +88,12 @@ class _SettingsPageState extends State<SettingsPage> {
     if (picked != null) {
       final timeStr = '${picked.hour.toString().padLeft(2, '0')}:${picked.minute.toString().padLeft(2, '0')}';
       app.setReminder(app.reminderEnabled, timeStr);
+
+      if (app.reminderEnabled) {
+        await NotificationService.instance.scheduleDailyReminder(picked.hour, picked.minute);
+        if (!mounted) return;
+        showToast(context, 'Reminder updated to $timeStr', kind: ToastKind.success);
+      }
     }
   }
 
@@ -88,6 +115,7 @@ class _SettingsPageState extends State<SettingsPage> {
       ),
     );
     if (ok == true) {
+      await NotificationService.instance.cancelReminder();
       await app.clearAllData();
     }
   }
@@ -206,11 +234,11 @@ class _SettingsPageState extends State<SettingsPage> {
                 ),
                 const Divider(height: 32),
 
-                // 👈 FIXED: Replaced Slider with ChoiceChips for Text Size
                 const Text('Text Size', style: TextStyle(fontWeight: FontWeight.w700)),
                 const SizedBox(height: 12),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
                   children: [
                     ChoiceChip(label: const Text('Small'), selected: app.textScale == 0.85, onSelected: (v) => app.setTextScale(0.85)),
                     ChoiceChip(label: const Text('Normal'), selected: app.textScale == 1.0, onSelected: (v) => app.setTextScale(1.0)),
@@ -262,10 +290,7 @@ class _SettingsPageState extends State<SettingsPage> {
                   subtitle: Text('Remind me at ${app.reminderTime}'),
                   value: app.reminderEnabled,
                   activeThumbColor: Theme.of(context).colorScheme.primary,
-                  onChanged: (v) {
-                    app.setReminder(v, app.reminderTime);
-                    if (v) _pickTime();
-                  },
+                  onChanged: _toggleReminder,
                   contentPadding: EdgeInsets.zero,
                 ),
                 if (app.reminderEnabled)
@@ -313,7 +338,6 @@ class _SettingsPageState extends State<SettingsPage> {
                   title: const Text('Export My Data', style: TextStyle(fontWeight: FontWeight.w700)),
                   subtitle: const Text('Choose PDF, CSV, or Audio format'),
                   trailing: const Icon(Icons.chevron_right),
-                  // 👈 FIXED: Opens the export bottom sheet
                   onTap: _showExportOptions,
                 ),
                 const Divider(),
@@ -342,7 +366,6 @@ class _SettingsPageState extends State<SettingsPage> {
                   style: TextStyle(fontSize: 12, color: AppColors.muted),
                 ),
                 SizedBox(height: 8),
-                // 👈 FIXED: Changed to Mindfullness Corporation
                 Text('Developed by Mindfullness Corporation', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 12)),
               ],
             ),
