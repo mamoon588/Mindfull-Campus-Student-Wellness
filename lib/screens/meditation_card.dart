@@ -200,7 +200,8 @@ class _MeditationCardState extends State<MeditationCard> {
     final ss = (remaining % 60).toString().padLeft(2, '0');
 
     return AppCard(
-      color: AppColors.primarySoft,
+      // 👈 FIXED: Removed the hardcoded light green color.
+      // It will now use the default white/black card color depending on the theme.
       child: Column(
         children: [
           const Text('🧘 Voice-Guided Meditation',
@@ -238,7 +239,7 @@ class _MeditationCardState extends State<MeditationCard> {
                     value: _total == 0 ? 0 : _elapsed / _total,
                     strokeWidth: 8,
                     color: AppColors.primary,
-                    backgroundColor: Colors.white,
+                    backgroundColor: Theme.of(context).dividerColor,
                   ),
                 ),
                 Column(

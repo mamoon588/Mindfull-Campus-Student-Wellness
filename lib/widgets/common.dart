@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-
 import '../theme.dart';
 
 enum ToastKind { info, success, error }
@@ -41,16 +40,27 @@ class AppCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final radius = BorderRadius.circular(16);
+    final bgColor = color ?? Theme.of(context).cardColor;
+
+    // 👈 HCI FIX: Automatically check if background is light. If so, force dark text.
+    final isLightBackground = bgColor.computeLuminance() > 0.5;
+
     return Material(
-      color: color ?? Colors.white,
+      color: bgColor,
       shape: RoundedRectangleBorder(
         borderRadius: radius,
-        side: const BorderSide(color: Color(0xFFE3EAE5)),
+        side: BorderSide(color: Theme.of(context).dividerColor.withAlpha(50)),
       ),
       clipBehavior: Clip.antiAlias,
       child: InkWell(
         onTap: onTap,
-        child: Padding(padding: padding, child: child),
+        child: Padding(
+          padding: padding,
+          child: DefaultTextStyle.merge(
+            style: TextStyle(color: isLightBackground ? const Color(0xFF272E29) : Colors.white),
+            child: child,
+          ),
+        ),
       ),
     );
   }
@@ -69,17 +79,16 @@ class SectionHeader extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(title,
-              style: const TextStyle(
-                  fontSize: 22, fontWeight: FontWeight.w800, color: AppColors.text)),
+              style: TextStyle(
+                  fontSize: 22, fontWeight: FontWeight.w800, color: Theme.of(context).textTheme.bodyLarge?.color)),
           const SizedBox(height: 2),
-          Text(subtitle, style: const TextStyle(color: AppColors.muted)),
+          Text(subtitle, style: TextStyle(color: Theme.of(context).textTheme.bodyMedium?.color?.withAlpha(150))),
         ],
       ),
     );
   }
 }
 
-/// Dropdown styled like the app's text fields (avoids FormField API churn).
 class LabeledDropdown<T> extends StatelessWidget {
   const LabeledDropdown({
     super.key,
@@ -118,7 +127,6 @@ class LabeledDropdown<T> extends StatelessWidget {
   }
 }
 
-/// Coloured info box used for results and tips.
 class Callout extends StatelessWidget {
   const Callout({super.key, required this.color, required this.child, this.accent});
   final Color color;
@@ -127,6 +135,9 @@ class Callout extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // 👈 HCI FIX: Automatically fix text color inside Callouts
+    final isLightBackground = color.computeLuminance() > 0.5;
+
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(12),
@@ -135,13 +146,14 @@ class Callout extends StatelessWidget {
         borderRadius: BorderRadius.circular(10),
         border: accent == null ? null : Border(left: BorderSide(color: accent!, width: 3)),
       ),
-      child: child,
+      child: DefaultTextStyle.merge(
+        style: TextStyle(color: isLightBackground ? const Color(0xFF272E29) : Colors.white),
+        child: child,
+      ),
     );
   }
 }
 
-/// Equal-width grid whose rows grow with their content, so large text sizes
-/// never overflow (unlike a fixed-aspect-ratio GridView).
 class AdaptiveGrid extends StatelessWidget {
   const AdaptiveGrid({
     super.key,
