@@ -86,10 +86,15 @@ class _MoodPageState extends State<MoodPage> {
                             margin: const EdgeInsets.symmetric(horizontal: 3),
                             padding: const EdgeInsets.symmetric(vertical: 10),
                             decoration: BoxDecoration(
-                              color: _selected == m.key ? AppColors.primarySoft : Colors.white,
+                              // 👈 FIXED: Dynamic background
+                              color: _selected == m.key
+                                  ? AppColors.primarySoft
+                                  : Theme.of(context).cardColor,
                               borderRadius: BorderRadius.circular(12),
                               border: Border.all(
-                                color: _selected == m.key ? AppColors.primary : AppColors.border,
+                                color: _selected == m.key
+                                    ? AppColors.primary
+                                    : Theme.of(context).dividerColor,
                                 width: _selected == m.key ? 2 : 1,
                               ),
                             ),
@@ -101,6 +106,7 @@ class _MoodPageState extends State<MoodPage> {
                                   overflow: TextOverflow.ellipsis,
                                   style: TextStyle(
                                       fontSize: 11,
+                                      color: Theme.of(context).textTheme.bodyLarge?.color,
                                       fontWeight: _selected == m.key
                                           ? FontWeight.w800
                                           : FontWeight.w600)),
