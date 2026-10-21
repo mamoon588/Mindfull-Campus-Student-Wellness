@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:project/utils.dart';
+import 'package:mindful_campus/utils.dart';
 
 void main() {
   group('sleepHours', () {
