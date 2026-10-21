@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -151,18 +152,10 @@ class AppState extends ChangeNotifier {
     List<List<dynamic>> rows = [];
     rows.add(['Date', 'Type', 'Details', 'Value/Notes']);
 
-    for (var m in moods) {
-      rows.add([m.date, 'Mood', m.label, m.note]);
-    }
-    for (var s in sleepLogs) {
-      rows.add([s.date, 'Sleep', '${s.hours} hours', 'Quality: ${s.quality}/5. ${s.notes}']);
-    }
-    for (var f in focusSessions) {
-      rows.add([f.date, 'Focus Session', '${f.plannedMinutes} mins planned', '${f.actualMinutes} mins focused']);
-    }
-    for (var h in habits) {
-      rows.add(['-', 'Habit', h.name, 'Streak: ${h.currentStreak(todayKey())}']);
-    }
+    for (var m in moods) { rows.add([m.date, 'Mood', m.label, m.note]); }
+    for (var s in sleepLogs) { rows.add([s.date, 'Sleep', '${s.hours} hours', 'Quality: ${s.quality}/5. ${s.notes}']); }
+    for (var f in focusSessions) { rows.add([f.date, 'Focus Session', '${f.plannedMinutes} mins planned', '${f.actualMinutes} mins focused']); }
+    for (var h in habits) { rows.add(['-', 'Habit', h.name, 'Streak: ${h.currentStreak(todayKey())}']); }
 
     String csvData = const ListToCsvConverter().convert(rows);
     final bytes = utf8.encode(csvData);
@@ -178,24 +171,21 @@ class AppState extends ChangeNotifier {
         pageFormat: PdfPageFormat.a4,
         build: (pw.Context context) {
           return [
-            // ignore: prefer_const_constructors
-            pw.Header(level: 0, child: pw.Text('Mindful Campus Data Export', style: pw.TextStyle(fontSize: 24, fontWeight: pw.FontWeight.bold))),
+            // 👈 FIXED: Added const to pw.TextStyle
+            pw.Header(level: 0, child: pw.Text('Mindful Campus Data Export', style: const pw.TextStyle(fontSize: 24, fontWeight: pw.FontWeight.bold))),
             pw.Paragraph(text: 'User: $userName ($userEmail)'),
             pw.Paragraph(text: 'Date: ${DateTime.now().toString()}'),
             pw.SizedBox(height: 20),
 
             pw.Header(level: 1, text: 'Mood Logs'),
-            // 👈 FIXED: Removed .toList()
             ...moods.map((m) => pw.Bullet(text: '${m.date}: ${m.label} - ${m.note}')),
             pw.SizedBox(height: 10),
 
             pw.Header(level: 1, text: 'Sleep Logs'),
-            // 👈 FIXED: Removed .toList()
             ...sleepLogs.map((s) => pw.Bullet(text: '${s.date}: ${s.hours} hours, Quality: ${s.quality}/5')),
             pw.SizedBox(height: 10),
 
             pw.Header(level: 1, text: 'Focus Sessions'),
-            // 👈 FIXED: Removed .toList()
             ...focusSessions.map((f) => pw.Bullet(text: '${f.date}: ${f.actualMinutes} mins focused')),
           ];
         },
@@ -209,20 +199,33 @@ class AppState extends ChangeNotifier {
 
   Future<void> exportDataAsMP3() async {
     final tts = FlutterTts();
-    // 👈 FIXED: Removed braces around habitsDoneToday
     final textToSpeak = 'Here is your Mindful Campus summary. You have logged ${moods.length} moods, ${sleepLogs.length} sleep sessions, and ${focusSessions.length} focus sessions. You have completed $habitsDoneToday habits today. Keep up the good work!';
 
     try {
+      await tts.setLanguage("en-US");
+      await tts.awaitSpeakCompletion(true);
+
       final tempDir = await getTemporaryDirectory();
       final filePath = '${tempDir.path}/mindful_campus_summary.mp3';
 
-      await tts.synthesizeToFile(textToSpeak, filePath, true);
-      final file = XFile(filePath, mimeType: 'audio/mpeg');
-      await Share.shareXFiles([file], text: 'My Mindful Campus Audio Summary');
+      final file = File(filePath);
+      if (await file.exists()) {
+        await file.delete();
+      }
+
+      var result = await tts.synthesizeToFile(textToSpeak, filePath, true);
+
+      if (result == 1 && await file.exists() && await file.length() > 0) {
+        final xFile = XFile(filePath, mimeType: 'audio/mpeg');
+        await Share.shareXFiles([xFile], text: 'My Mindful Campus Audio Summary');
+      } else {
+        throw Exception('TTS synthesis failed or produced an empty file');
+      }
     } catch (e) {
-      final bytes = utf8.encode('Audio export is not supported on Web. Here is your script:\n\n$textToSpeak');
+      debugPrint('MP3 Export Error: $e');
+      final bytes = utf8.encode('Audio export is not supported on Web or your device lacks a TTS engine. Here is your script:\n\n$textToSpeak');
       final file = XFile.fromData(bytes, mimeType: 'text/plain', name: 'audio_script.txt');
-      await Share.shareXFiles([file], text: 'Audio Export requires a mobile phone. Here is the text script instead.');
+      await Share.shareXFiles([file], text: 'Audio Export requires a mobile phone with Text-to-Speech installed.');
     }
   }
 
@@ -232,7 +235,6 @@ class AppState extends ChangeNotifier {
     moods.clear(); sleepLogs.clear(); journals.clear(); focusSessions.clear(); habits.clear();
     notifyListeners();
   }
-  // ===================================================
 
   Future<void> login({required String email, required bool remember}) async {
     userEmail = email; userName = prettyNameFromEmail(email); isLoggedIn = true;
