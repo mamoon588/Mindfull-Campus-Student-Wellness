@@ -6,34 +6,20 @@ import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
 import '../services/app_state.dart';
+import '../theme.dart';
 import '../utils.dart';
 import '../widgets/common.dart';
 import 'login_page.dart';
 
-// Colours used only on the auth pages (same teal as the login page).
-const _teal = Color(0xFF2D9D5F); // = AppColors.primary
-const _tealSoft = Color(0xFFE8F6EE); // = AppColors.primarySoft
-const _title = Color(0xFF272E29); // = AppColors.text
-const _fieldBorder = Color(0xFFCBD5CC); // = AppColors.border
-const _pageBg = Color(0xFFF6FAF7); // = AppColors.bg
-const _muted = Color(0xFF748078); // = AppColors.muted
-const _danger = Color(0xFFDC2626);
-
-// =====================================================================
-// Countries for the phone-number picker.
-// minLen / maxLen = digits of the number WITHOUT the country code and
-// without a leading 0 (approximate rules, adjust if you need stricter ones).
-// =====================================================================
 class _Country {
   const _Country(this.iso, this.name, this.dial, this.minLen, this.maxLen);
-  final String iso; // ISO 2-letter code, used to draw the flag image
+  final String iso;
   final String name;
   final String dial;
   final int minLen;
   final int maxLen;
 }
 
-// Pakistan stays first (default); the rest are sorted A-Z in _countries below.
 const _rawCountries = [
   _Country('PK', 'Pakistan', '+92', 10, 10),
   _Country('IN', 'India', '+91', 10, 10),
@@ -122,15 +108,12 @@ final List<_Country> _countries = [
   ...(_rawCountries.skip(1).toList()..sort((a, b) => a.name.compareTo(b.name))),
 ];
 
-// Flag drawn as an image (emoji flags do not render on Windows / Chrome)
 Widget _flag(String iso, {double width = 26, double height = 18}) => CountryFlag.fromCountryCode(
   iso,
   width: width,
   height: height,
 );
 
-// Digits only, and never longer than the selected country allows
-// (+1 only when the user types a leading 0, e.g. 03001234567).
 class _PhoneFormatter extends TextInputFormatter {
   const _PhoneFormatter(this.maxLen);
   final int maxLen;
@@ -164,19 +147,19 @@ class _RegisterPageState extends State<RegisterPage> {
   final _pass = TextEditingController();
   final _confirm = TextEditingController();
 
-  _Country _country = _countries.first; // Pakistan by default
+  _Country _country = _countries.first;
   String? _gender;
   bool _agreed = false;
-  bool _showPass = false; // eye on the Password field
-  bool _showConfirm = false; // separate eye on the Confirm field
+  bool _showPass = false;
+  bool _showConfirm = false;
   bool _busy = false;
-  bool _tried = false; // true after the first press of "Create Account"
-  String? _error; // ONE message line, so the page never grows taller
+  bool _tried = false;
+  String? _error;
 
   @override
   void initState() {
     super.initState();
-    _pass.addListener(() => setState(() {})); // live password check
+    _pass.addListener(() => setState(() {}));
     _confirm.addListener(() => setState(() {}));
   }
 
@@ -188,14 +171,12 @@ class _RegisterPageState extends State<RegisterPage> {
     super.dispose();
   }
 
-  // Phone digits without any leading zeros (03001234567 -> 3001234567)
   String get _phoneDigits =>
       _phone.text.replaceAll(RegExp(r'\D'), '').replaceFirst(RegExp(r'^0+'), '');
 
   bool get _phoneOk {
     final n = _phoneDigits.length;
     if (n < _country.minLen || n > _country.maxLen) return false;
-    // Pakistani mobile numbers are 03XX XXXXXXX
     if (_country.dial == '+92' && !_phoneDigits.startsWith('3')) return false;
     return true;
   }
@@ -204,7 +185,6 @@ class _RegisterPageState extends State<RegisterPage> {
       ? '${_country.minLen}'
       : '${_country.minLen}-${_country.maxLen}';
 
-  // The first thing that is wrong, in the order the fields appear
   String? _firstProblem() {
     if (!looksLikeName(_first.text) || !looksLikeName(_last.text)) {
       return 'Enter your first and last name.';
@@ -228,12 +208,11 @@ class _RegisterPageState extends State<RegisterPage> {
       isScrollControlled: true,
       useSafeArea: true,
       showDragHandle: true,
-      backgroundColor: Colors.white,
+      backgroundColor: Theme.of(context).cardColor,
       builder: (_) => _CountrySheet(selected: _country),
     );
     if (c != null) {
       setState(() => _country = c);
-      // shorten an already-typed number if the new country allows fewer digits
       _phone.value = _PhoneFormatter(c.maxLen)
           .formatEditUpdate(TextEditingValue.empty, _phone.value);
     }
@@ -248,7 +227,7 @@ class _RegisterPageState extends State<RegisterPage> {
     return showModalBottomSheet<String>(
       context: context,
       showDragHandle: true,
-      backgroundColor: Colors.white,
+      backgroundColor: Theme.of(context).cardColor,
       builder: (ctx) => SafeArea(
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -259,15 +238,15 @@ class _RegisterPageState extends State<RegisterPage> {
                 alignment: Alignment.centerLeft,
                 child: Text('Select your gender',
                     style: TextStyle(
-                        fontSize: 18, fontWeight: FontWeight.w700, color: _title)),
+                        fontSize: 18, fontWeight: FontWeight.w700)),
               ),
             ),
             for (final o in options)
               ListTile(
-                leading: Icon(o.$2, color: _teal),
+                leading: Icon(o.$2, color: AppColors.primary),
                 title: Text(o.$1),
                 trailing: _gender == o.$1
-                    ? const Icon(Icons.check_circle, color: _teal)
+                    ? const Icon(Icons.check_circle, color: AppColors.primary)
                     : null,
                 onTap: () => Navigator.pop(ctx, o.$1),
               ),
@@ -281,7 +260,7 @@ class _RegisterPageState extends State<RegisterPage> {
   Future<void> _submit() async {
     if (_busy) return;
     setState(() => _tried = true);
-    final fieldsOk = _form.currentState!.validate(); // paints red borders
+    final fieldsOk = _form.currentState!.validate();
     final problem = _firstProblem();
     if (!fieldsOk || problem != null) {
       setState(() => _error = problem ?? 'Please fix the red fields.');
@@ -303,81 +282,79 @@ class _RegisterPageState extends State<RegisterPage> {
       university: _university.text.trim(),
     );
     if (!mounted) return;
-    nav.popUntil((route) => route.isFirst); // back to the root, which is now the dashboard
+    nav.popUntil((route) => route.isFirst);
     toastOn(messenger, '🎉 Welcome to Mindful Campus, $first!', kind: ToastKind.success);
   }
 
-  // ---------- small UI helpers ----------
   OutlineInputBorder _border(Color color, [double width = 1.2]) => OutlineInputBorder(
     borderRadius: BorderRadius.circular(14),
     borderSide: BorderSide(color: color, width: width),
   );
 
-  // Placeholder with a RED asterisk for required fields
-  Widget _req(String text, {double size = 14.5}) => Text.rich(
+  Widget _req(String text, {double size = 14.5, required Color textColor}) => Text.rich(
     TextSpan(
       text: text,
-      style: TextStyle(color: const Color(0xFF222B33), fontSize: size),
+      style: TextStyle(color: textColor, fontSize: size),
       children: [
         TextSpan(
             text: ' *',
             style: TextStyle(
-                color: _danger, fontSize: size, fontWeight: FontWeight.w700)),
+                color: AppColors.danger, fontSize: size, fontWeight: FontWeight.w700)),
       ],
     ),
     maxLines: 1,
     overflow: TextOverflow.ellipsis,
   );
 
-  // Compact field style. The error text is hidden on purpose (size 0): an
-  // invalid field just gets a red border and the message shows in ONE line
-  // above the button, so the layout never jumps and never needs scrolling.
-  InputDecoration _dec({String? hint, Widget? hintWidget, IconData? icon, Widget? suffix}) {
+  InputDecoration _dec({String? hint, Widget? hintWidget, IconData? icon, Widget? suffix, required bool isDark, required Color textColor}) {
+    final borderColor = isDark ? Colors.grey.shade700 : const Color(0xFFCBD5CC);
     return InputDecoration(
       hintText: hint,
       hint: hintWidget,
-      hintStyle: const TextStyle(color: Color(0xFF222B33), fontSize: 14.5),
-      prefixIcon: icon == null ? null : Icon(icon, color: _teal, size: 20),
+      hintStyle: TextStyle(color: textColor, fontSize: 14.5),
+      prefixIcon: icon == null ? null : Icon(icon, color: AppColors.primary, size: 20),
       prefixIconConstraints: const BoxConstraints(minWidth: 40, minHeight: 36),
       suffixIcon: suffix,
       suffixIconConstraints: const BoxConstraints(minWidth: 36, minHeight: 36),
       filled: true,
-      fillColor: Colors.white,
+      fillColor: isDark ? const Color(0xFF2C2C2C) : Colors.white,
       contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 13),
       errorStyle: const TextStyle(fontSize: 0, height: 0),
-      border: _border(_fieldBorder),
-      enabledBorder: _border(_fieldBorder),
-      focusedBorder: _border(_teal, 1.8),
-      errorBorder: _border(_danger),
-      focusedErrorBorder: _border(_danger, 1.8),
+      border: _border(borderColor),
+      enabledBorder: _border(borderColor),
+      focusedBorder: _border(AppColors.primary, 1.8),
+      errorBorder: _border(AppColors.danger),
+      focusedErrorBorder: _border(AppColors.danger, 1.8),
     );
   }
 
-  Widget _ruleChip(bool ok, String text) => Row(
+  Widget _ruleChip(bool ok, String text, Color mutedColor) => Row(
     mainAxisSize: MainAxisSize.min,
     children: [
       Icon(ok ? Icons.check_circle : Icons.radio_button_unchecked,
-          size: 14, color: ok ? _teal : _muted),
+          size: 14, color: ok ? AppColors.primary : mutedColor),
       const SizedBox(width: 4),
-      Text(text, style: TextStyle(fontSize: 11.5, color: ok ? _teal : _muted)),
+      Text(text, style: TextStyle(fontSize: 11.5, color: ok ? AppColors.primary : mutedColor)),
     ],
   );
 
   @override
   Widget build(BuildContext context) {
     final pass = _pass.text;
-    // On short phones the gaps shrink a little so everything still fits
     final short = MediaQuery.of(context).size.height < 640;
     final gap = short ? 8.0 : 11.0;
 
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final bgColor = Theme.of(context).scaffoldBackgroundColor;
+    final cardColor = Theme.of(context).cardColor;
+    // 👈 FIXED: Explicitly cast to Color to prevent null errors
+    final Color textColor = Theme.of(context).textTheme.bodyLarge?.color ?? (isDark ? Colors.white : Colors.black);
+    final Color mutedColor = Theme.of(context).textTheme.bodyMedium?.color ?? (isDark ? Colors.grey.shade400 : Colors.grey.shade700);
+
     return Scaffold(
-      backgroundColor: _pageBg,
+      backgroundColor: bgColor,
       body: SafeArea(
         child: LayoutBuilder(builder: (context, c) {
-          // The page only scrolls if the keyboard covers part of it
-          // (or the phone is extremely small). Normally nothing scrolls.
-          // On a phone the page covers the whole screen; on a wide screen
-          // (Chrome / tablet) it is a phone-sized rounded card.
           final phone = c.maxWidth < 520;
           return SingleChildScrollView(
             keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
@@ -392,14 +369,14 @@ class _RegisterPageState extends State<RegisterPage> {
                     decoration: phone
                         ? null
                         : BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(28), // rounded corners
-                      border: Border.all(color: const Color(0xFFDDEFE3)),
-                      boxShadow: const [
+                      color: cardColor,
+                      borderRadius: BorderRadius.circular(28),
+                      border: Border.all(color: isDark ? Colors.grey.shade800 : const Color(0xFFDDEFE3)),
+                      boxShadow: [
                         BoxShadow(
-                            color: Color(0x1A000000),
+                            color: isDark ? Colors.black45 : const Color(0x1A000000),
                             blurRadius: 24,
-                            offset: Offset(0, 8)),
+                            offset: const Offset(0, 8)),
                       ],
                     ),
                     child: AutofillGroup(
@@ -411,32 +388,30 @@ class _RegisterPageState extends State<RegisterPage> {
                           mainAxisSize: MainAxisSize.min,
                           crossAxisAlignment: CrossAxisAlignment.stretch,
                           children: [
-                            // ---------- Back button + title on ONE row ----------
                             Row(children: [
                               IconButton.outlined(
                                 tooltip: 'Back',
                                 onPressed: () => Navigator.of(context).maybePop(),
                                 icon: const Icon(Icons.arrow_back),
                                 style: IconButton.styleFrom(
-                                  backgroundColor: Colors.white,
-                                  foregroundColor: _teal,
+                                  backgroundColor: cardColor,
+                                  foregroundColor: AppColors.primary,
                                   minimumSize: const Size(42, 42),
-                                  side: const BorderSide(color: _teal, width: 1.4),
+                                  side: const BorderSide(color: AppColors.primary, width: 1.4),
                                 ),
                               ),
-                              const Expanded(
+                              Expanded(
                                 child: Text('🌱 Create Account',
                                     textAlign: TextAlign.center,
                                     style: TextStyle(
                                         fontSize: 22,
                                         fontWeight: FontWeight.w600,
-                                        color: _title)),
+                                        color: textColor)),
                               ),
-                              const SizedBox(width: 42), // keeps the title centred
+                              const SizedBox(width: 42),
                             ]),
                             SizedBox(height: gap + 2),
 
-                            // ---------- First name | Last name ----------
                             Row(children: [
                               Expanded(
                                 child: TextFormField(
@@ -444,10 +419,9 @@ class _RegisterPageState extends State<RegisterPage> {
                                   textInputAction: TextInputAction.next,
                                   textCapitalization: TextCapitalization.words,
                                   autofillHints: const [AutofillHints.givenName],
-                                  cursorColor: _teal,
-                                  decoration: _dec(hintWidget: _req('First name')),
-                                  validator: (v) =>
-                                  looksLikeName(v ?? '') ? null : 'x',
+                                  cursorColor: AppColors.primary,
+                                  decoration: _dec(hintWidget: _req('First name', textColor: mutedColor), isDark: isDark, textColor: mutedColor),
+                                  validator: (v) => looksLikeName(v ?? '') ? null : 'x',
                                 ),
                               ),
                               const SizedBox(width: 10),
@@ -457,16 +431,14 @@ class _RegisterPageState extends State<RegisterPage> {
                                   textInputAction: TextInputAction.next,
                                   textCapitalization: TextCapitalization.words,
                                   autofillHints: const [AutofillHints.familyName],
-                                  cursorColor: _teal,
-                                  decoration: _dec(hintWidget: _req('Last name')),
-                                  validator: (v) =>
-                                  looksLikeName(v ?? '') ? null : 'x',
+                                  cursorColor: AppColors.primary,
+                                  decoration: _dec(hintWidget: _req('Last name', textColor: mutedColor), isDark: isDark, textColor: mutedColor),
+                                  validator: (v) => looksLikeName(v ?? '') ? null : 'x',
                                 ),
                               ),
                             ]),
                             SizedBox(height: gap),
 
-                            // ---------- Gender (list) | University (optional) ----------
                             Row(children: [
                               Expanded(
                                 child: FormField<String>(
@@ -483,15 +455,12 @@ class _RegisterPageState extends State<RegisterPage> {
                                     child: InputDecorator(
                                       isEmpty: false,
                                       decoration: _dec(
-                                        suffix: const Icon(Icons.arrow_drop_down,
-                                            color: _teal),
-                                      ).copyWith(
-                                          errorText: state.hasError ? 'x' : null),
+                                          suffix: const Icon(Icons.arrow_drop_down, color: AppColors.primary),
+                                          isDark: isDark, textColor: mutedColor
+                                      ).copyWith(errorText: state.hasError ? 'x' : null),
                                       child: _gender == null
-                                          ? _req('Gender')
-                                          : Text(_gender!,
-                                          style: const TextStyle(
-                                              fontSize: 14.5, color: Colors.black87)),
+                                          ? _req('Gender', textColor: mutedColor)
+                                          : Text(_gender!, style: TextStyle(fontSize: 14.5, color: textColor)),
                                     ),
                                   ),
                                 ),
@@ -502,18 +471,14 @@ class _RegisterPageState extends State<RegisterPage> {
                                   controller: _university,
                                   textInputAction: TextInputAction.next,
                                   textCapitalization: TextCapitalization.words,
-                                  cursorColor: _teal,
-                                  decoration: _dec(hint: 'University (optional)')
-                                      .copyWith(
-                                      hintStyle: const TextStyle(
-                                          color: Color(0xFF222B33),
-                                          fontSize: 13)),
+                                  cursorColor: AppColors.primary,
+                                  decoration: _dec(hint: 'University (optional)', isDark: isDark, textColor: mutedColor)
+                                      .copyWith(hintStyle: TextStyle(color: mutedColor, fontSize: 13)),
                                 ),
                               ),
                             ]),
                             SizedBox(height: gap),
 
-                            // ---------- Country code | Phone number ----------
                             Row(children: [
                               SizedBox(
                                 width: 116,
@@ -522,21 +487,21 @@ class _RegisterPageState extends State<RegisterPage> {
                                   onTap: _pickCountry,
                                   child: InputDecorator(
                                     isEmpty: false,
-                                    decoration: _dec(),
+                                    decoration: _dec(isDark: isDark, textColor: mutedColor),
                                     child: Row(children: [
                                       Expanded(
                                         child: Row(children: [
                                           _flag(_country.iso, width: 22, height: 15),
                                           const SizedBox(width: 6),
                                           Flexible(
+                                            // 👈 Dynamic text color for +92
                                             child: Text(_country.dial,
-                                                style: const TextStyle(fontSize: 14.5),
+                                                style: TextStyle(fontSize: 14.5, color: textColor),
                                                 overflow: TextOverflow.ellipsis),
                                           ),
                                         ]),
                                       ),
-                                      const Icon(Icons.arrow_drop_down,
-                                          size: 22, color: _teal),
+                                      const Icon(Icons.arrow_drop_down, size: 22, color: AppColors.primary),
                                     ]),
                                   ),
                                 ),
@@ -547,33 +512,27 @@ class _RegisterPageState extends State<RegisterPage> {
                                   controller: _phone,
                                   keyboardType: TextInputType.phone,
                                   textInputAction: TextInputAction.next,
-                                  autofillHints: const [
-                                    AutofillHints.telephoneNumberNational
-                                  ],
+                                  autofillHints: const [AutofillHints.telephoneNumberNational],
                                   inputFormatters: [_PhoneFormatter(_country.maxLen)],
-                                  cursorColor: _teal,
-                                  decoration: _dec(hintWidget: _req('Phone number')),
+                                  cursorColor: AppColors.primary,
+                                  decoration: _dec(hintWidget: _req('Phone number', textColor: mutedColor), isDark: isDark, textColor: mutedColor),
                                   validator: (_) => _phoneOk ? null : 'x',
                                 ),
                               ),
                             ]),
                             SizedBox(height: gap),
 
-                            // ---------- Email ----------
                             TextFormField(
                               controller: _email,
                               keyboardType: TextInputType.emailAddress,
                               textInputAction: TextInputAction.next,
                               autofillHints: const [AutofillHints.email],
-                              cursorColor: _teal,
-                              decoration:
-                              _dec(hintWidget: _req('Email'), icon: Icons.mail_outline_rounded),
-                              validator: (v) =>
-                              looksLikeEmail((v ?? '').trim()) ? null : 'x',
+                              cursorColor: AppColors.primary,
+                              decoration: _dec(hintWidget: _req('Email', textColor: mutedColor), icon: Icons.mail_outline_rounded, isDark: isDark, textColor: mutedColor),
+                              validator: (v) => looksLikeEmail((v ?? '').trim()) ? null : 'x',
                             ),
                             SizedBox(height: gap),
 
-                            // ---------- Password | Confirm ----------
                             Row(children: [
                               Expanded(
                                 child: TextFormField(
@@ -581,27 +540,20 @@ class _RegisterPageState extends State<RegisterPage> {
                                   obscureText: !_showPass,
                                   textInputAction: TextInputAction.next,
                                   autofillHints: const [AutofillHints.newPassword],
-                                  cursorColor: _teal,
+                                  cursorColor: AppColors.primary,
                                   decoration: _dec(
-                                    hintWidget: _req('Password'),
-                                    suffix: IconButton(
-                                      tooltip: _showPass ? 'Hide password' : 'Show password',
-                                      padding: EdgeInsets.zero,
-                                      visualDensity: VisualDensity.compact,
-                                      constraints: const BoxConstraints(
-                                          minWidth: 36, minHeight: 36),
-                                      icon: Icon(
-                                          _showPass
-                                              ? Icons.visibility_rounded
-                                              : Icons.visibility_off_rounded,
-                                          size: 20,
-                                          color: _teal),
-                                      onPressed: () =>
-                                          setState(() => _showPass = !_showPass),
-                                    ),
+                                      hintWidget: _req('Password', textColor: mutedColor),
+                                      suffix: IconButton(
+                                        tooltip: _showPass ? 'Hide password' : 'Show password',
+                                        padding: EdgeInsets.zero,
+                                        visualDensity: VisualDensity.compact,
+                                        constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
+                                        icon: Icon(_showPass ? Icons.visibility_rounded : Icons.visibility_off_rounded, size: 20, color: AppColors.primary),
+                                        onPressed: () => setState(() => _showPass = !_showPass),
+                                      ),
+                                      isDark: isDark, textColor: mutedColor
                                   ),
-                                  validator: (v) =>
-                                  PasswordRules.ok(v ?? '') ? null : 'x',
+                                  validator: (v) => PasswordRules.ok(v ?? '') ? null : 'x',
                                 ),
                               ),
                               const SizedBox(width: 10),
@@ -612,24 +564,18 @@ class _RegisterPageState extends State<RegisterPage> {
                                   textInputAction: TextInputAction.done,
                                   onFieldSubmitted: (_) => _submit(),
                                   autofillHints: const [AutofillHints.newPassword],
-                                  cursorColor: _teal,
+                                  cursorColor: AppColors.primary,
                                   decoration: _dec(
-                                    hintWidget: _req('Confirm'),
-                                    suffix: IconButton(
-                                      tooltip: _showConfirm ? 'Hide password' : 'Show password',
-                                      padding: EdgeInsets.zero,
-                                      visualDensity: VisualDensity.compact,
-                                      constraints: const BoxConstraints(
-                                          minWidth: 36, minHeight: 36),
-                                      icon: Icon(
-                                          _showConfirm
-                                              ? Icons.visibility_rounded
-                                              : Icons.visibility_off_rounded,
-                                          size: 20,
-                                          color: _teal),
-                                      onPressed: () =>
-                                          setState(() => _showConfirm = !_showConfirm),
-                                    ),
+                                      hintWidget: _req('Confirm', textColor: mutedColor),
+                                      suffix: IconButton(
+                                        tooltip: _showConfirm ? 'Hide password' : 'Show password',
+                                        padding: EdgeInsets.zero,
+                                        visualDensity: VisualDensity.compact,
+                                        constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
+                                        icon: Icon(_showConfirm ? Icons.visibility_rounded : Icons.visibility_off_rounded, size: 20, color: AppColors.primary),
+                                        onPressed: () => setState(() => _showConfirm = !_showConfirm),
+                                      ),
+                                      isDark: isDark, textColor: mutedColor
                                   ),
                                   validator: (v) => v == _pass.text ? null : 'x',
                                 ),
@@ -637,33 +583,29 @@ class _RegisterPageState extends State<RegisterPage> {
                             ]),
                             const SizedBox(height: 6),
 
-                            // ---------- Live password check (one line) ----------
                             Padding(
                               padding: const EdgeInsets.symmetric(horizontal: 4),
                               child: Row(
                                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                 children: [
-                                  _ruleChip(PasswordRules.hasLength(pass), '8+'),
-                                  _ruleChip(PasswordRules.hasUpper(pass), 'A-Z'),
-                                  _ruleChip(PasswordRules.hasLower(pass), 'a-z'),
-                                  _ruleChip(PasswordRules.hasNumber(pass), '0-9'),
-                                  _ruleChip(PasswordRules.hasSpecial(pass), 'Symbol'),
-                                  _ruleChip(
-                                      _confirm.text.isNotEmpty && _confirm.text == pass,
-                                      'Match'),
+                                  _ruleChip(PasswordRules.hasLength(pass), '8+', mutedColor),
+                                  _ruleChip(PasswordRules.hasUpper(pass), 'A-Z', mutedColor),
+                                  _ruleChip(PasswordRules.hasLower(pass), 'a-z', mutedColor),
+                                  _ruleChip(PasswordRules.hasNumber(pass), '0-9', mutedColor),
+                                  _ruleChip(PasswordRules.hasSpecial(pass), 'Symbol', mutedColor),
+                                  _ruleChip(_confirm.text.isNotEmpty && _confirm.text == pass, 'Match', mutedColor),
                                 ],
                               ),
                             ),
                             SizedBox(height: gap - 3),
 
-                            // ---------- Agreement ----------
                             InkWell(
                               borderRadius: BorderRadius.circular(8),
                               onTap: () => setState(() => _agreed = !_agreed),
                               child: Row(children: [
                                 Checkbox(
                                   value: _agreed,
-                                  activeColor: _teal,
+                                  activeColor: AppColors.primary,
                                   visualDensity: VisualDensity.compact,
                                   materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
                                   onChanged: (v) => setState(() => _agreed = v ?? false),
@@ -674,13 +616,12 @@ class _RegisterPageState extends State<RegisterPage> {
                                     style: TextStyle(
                                         fontSize: 11.5,
                                         height: 1.25,
-                                        color: (_tried && !_agreed) ? _danger : _muted),
+                                        color: (_tried && !_agreed) ? AppColors.danger : mutedColor),
                                   ),
                                 ),
                               ]),
                             ),
 
-                            // ---------- ONE reserved line for any problem ----------
                             SizedBox(
                               height: 20,
                               child: Center(
@@ -689,64 +630,44 @@ class _RegisterPageState extends State<RegisterPage> {
                                   child: Text(_error ?? '',
                                       maxLines: 1,
                                       overflow: TextOverflow.ellipsis,
-                                      style: const TextStyle(
-                                          color: _danger,
-                                          fontSize: 12.5,
-                                          fontWeight: FontWeight.w500)),
+                                      style: const TextStyle(color: AppColors.danger, fontSize: 12.5, fontWeight: FontWeight.w500)),
                                 ),
                               ),
                             ),
 
-                            // ---------- Create button ----------
                             DecoratedBox(
                               decoration: BoxDecoration(
                                 borderRadius: BorderRadius.circular(16),
-                                boxShadow: const [
-                                  BoxShadow(
-                                      color: Color(0x402D9D5F),
-                                      blurRadius: 12,
-                                      offset: Offset(0, 5)),
-                                ],
+                                boxShadow: const [BoxShadow(color: Color(0x402D9D5F), blurRadius: 12, offset: Offset(0, 5))],
                               ),
                               child: FilledButton(
                                 style: FilledButton.styleFrom(
-                                  backgroundColor: _teal,
+                                  backgroundColor: AppColors.primary,
                                   foregroundColor: Colors.white,
                                   minimumSize: const Size.fromHeight(50),
-                                  shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(16)),
-                                  textStyle: const TextStyle(
-                                      fontSize: 17, fontWeight: FontWeight.w600),
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                                  textStyle: const TextStyle(fontSize: 17, fontWeight: FontWeight.w600),
                                 ),
                                 onPressed: _busy ? null : _submit,
                                 child: _busy
-                                    ? const SizedBox(
-                                    width: 22,
-                                    height: 22,
-                                    child: CircularProgressIndicator(
-                                        strokeWidth: 2.5, color: Colors.white))
+                                    ? const SizedBox(width: 22, height: 22, child: CircularProgressIndicator(strokeWidth: 2.5, color: Colors.white))
                                     : const Text('Create Account'),
                               ),
                             ),
 
-                            // ---------- Login link ----------
                             Row(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
-                                const Text('Already have an account?',
-                                    style: TextStyle(color: _muted, fontSize: 14)),
+                                Text('Already have an account?', style: TextStyle(color: mutedColor, fontSize: 14)),
                                 TextButton(
                                   onPressed: () => Navigator.of(context).pushReplacement(
-                                      MaterialPageRoute<void>(
-                                          builder: (_) => const LoginPage())),
+                                      MaterialPageRoute<void>(builder: (_) => const LoginPage())),
                                   style: TextButton.styleFrom(
-                                    foregroundColor: _teal,
+                                    foregroundColor: AppColors.primary,
                                     padding: const EdgeInsets.symmetric(horizontal: 6),
                                     minimumSize: const Size(48, 40),
                                   ),
-                                  child: const Text('Log In',
-                                      style: TextStyle(
-                                          fontWeight: FontWeight.w700, fontSize: 14)),
+                                  child: const Text('Log In', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 14)),
                                 ),
                               ],
                             ),
@@ -765,9 +686,6 @@ class _RegisterPageState extends State<RegisterPage> {
   }
 }
 
-// =====================================================================
-// Bottom sheet with a search box and the list of countries
-// =====================================================================
 class _CountrySheet extends StatefulWidget {
   const _CountrySheet({required this.selected});
   final _Country selected;
@@ -782,12 +700,13 @@ class _CountrySheetState extends State<_CountrySheet> {
   @override
   Widget build(BuildContext context) {
     final q = _query.trim().toLowerCase();
-    final list = _countries
-        .where((c) => c.name.toLowerCase().contains(q) || c.dial.contains(q))
-        .toList();
+    final list = _countries.where((c) => c.name.toLowerCase().contains(q) || c.dial.contains(q)).toList();
     final media = MediaQuery.of(context);
-    final height =
-    math.min(media.size.height * 0.7, media.size.height - media.viewInsets.bottom - 80);
+    final height = math.min(media.size.height * 0.7, media.size.height - media.viewInsets.bottom - 80);
+
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final Color textColor = Theme.of(context).textTheme.bodyLarge?.color ?? (isDark ? Colors.white : Colors.black);
+    final Color mutedColor = Theme.of(context).textTheme.bodyMedium?.color ?? (isDark ? Colors.grey.shade400 : Colors.grey.shade700);
 
     return Padding(
       padding: EdgeInsets.only(bottom: media.viewInsets.bottom),
@@ -795,42 +714,33 @@ class _CountrySheetState extends State<_CountrySheet> {
         height: height,
         child: Column(
           children: [
-            const Padding(
-              padding: EdgeInsets.fromLTRB(20, 0, 20, 8),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 0, 20, 8),
               child: Align(
                 alignment: Alignment.centerLeft,
-                child: Text('Select your country',
-                    style: TextStyle(
-                        fontSize: 18, fontWeight: FontWeight.w700, color: _title)),
+                child: Text('Select your country', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: textColor)),
               ),
             ),
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
               child: TextField(
                 onChanged: (v) => setState(() => _query = v),
-                cursorColor: _teal,
+                cursorColor: AppColors.primary,
                 decoration: InputDecoration(
                   hintText: 'Search country or code',
-                  prefixIcon: const Icon(Icons.search, color: _teal),
+                  prefixIcon: const Icon(Icons.search, color: AppColors.primary),
                   filled: true,
-                  fillColor: Colors.white,
+                  fillColor: isDark ? const Color(0xFF2C2C2C) : Colors.white,
                   contentPadding: const EdgeInsets.symmetric(vertical: 12),
-                  border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(14),
-                      borderSide: const BorderSide(color: _fieldBorder)),
-                  enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(14),
-                      borderSide: const BorderSide(color: _fieldBorder)),
-                  focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(14),
-                      borderSide: const BorderSide(color: _teal, width: 1.8)),
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide(color: isDark ? Colors.grey.shade700 : const Color(0xFFCBD5CC))),
+                  enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide(color: isDark ? Colors.grey.shade700 : const Color(0xFFCBD5CC))),
+                  focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: const BorderSide(color: AppColors.primary, width: 1.8)),
                 ),
               ),
             ),
             Expanded(
               child: list.isEmpty
-                  ? const Center(
-                  child: Text('No country found', style: TextStyle(color: _muted)))
+                  ? Center(child: Text('No country found', style: TextStyle(color: mutedColor)))
                   : ListView.builder(
                 itemCount: list.length,
                 itemBuilder: (context, i) {
@@ -838,14 +748,11 @@ class _CountrySheetState extends State<_CountrySheet> {
                   final isSelected = c.name == widget.selected.name;
                   return ListTile(
                     leading: SizedBox(width: 34, child: Center(child: _flag(c.iso, width: 30, height: 21))),
-                    title: Text(c.name),
-                    trailing: Text(c.dial,
-                        style: TextStyle(
-                            fontWeight: FontWeight.w700,
-                            color: isSelected ? _teal : _title)),
+                    title: Text(c.name, style: TextStyle(color: textColor)),
+                    trailing: Text(c.dial, style: TextStyle(fontWeight: FontWeight.w700, color: isSelected ? AppColors.primary : textColor)),
                     selected: isSelected,
-                    selectedColor: _teal,
-                    selectedTileColor: _tealSoft,
+                    selectedColor: AppColors.primary,
+                    selectedTileColor: AppColors.primary.withAlpha(isDark ? 40 : 20),
                     onTap: () => Navigator.pop(context, c),
                   );
                 },
